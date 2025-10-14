@@ -1,0 +1,17 @@
+ADD
+X0,
+X1,
+X2
+
+/// test/syntax/multiline_instruction.lv8:1:4: error: expected an X register, got a newline
+/// ADD
+///    ^
+/// test/syntax/multiline_instruction.lv8:2:1: error: unexpected an X register
+/// X0,
+/// ^~
+/// test/syntax/multiline_instruction.lv8:3:1: error: unexpected an X register
+/// X1,
+/// ^~
+/// test/syntax/multiline_instruction.lv8:4:1: error: unexpected an X register
+/// X2
+/// ^~

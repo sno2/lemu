@@ -1,0 +1,82 @@
+B main
+
+// int64_t rand(uint64_t *seed) {
+//     *seed = 6364136223846793005ULL * *seed + 1;
+//     return (int64_t)(*seed >> 33);
+// }
+rand:
+    LDUR X1, [X0, #0]
+    MOVZ X2, #0x7f2d
+    MOVK X2, #0x4c95, LSL 16
+    MOVK X2, #0xf42d, LSL 32
+    MOVK X2, #0x5851, LSL 48
+    MUL X1, X2, X1
+    ADDI X1, X1, #1
+    STUR X1, [X0, #0]
+    LSR X1, X1, #33
+    ADDI X0, X1, #0
+    BR LR
+
+// int main(void) {
+//     uint64_t seed = 0;
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+//     printf("%ld\n", rand(&seed));
+// }
+main:
+    SUBI SP, SP, #8
+    STUR XZR, [SP, #0]
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI X0, SP, #0
+    BL rand
+    PRNT X0
+
+    ADDI SP, SP, #8
+
+/// X0: 000000000000000000 (0)
+/// X0: 0x000000002c28fa16 (740882966)
+/// X0: 0x000000006058c667 (1616430695)
+/// X0: 0x0000000065dafb23 (1708849955)
+/// X0: 0x0000000063819894 (1669437588)
+/// X0: 0x0000000018382d82 (406334850)
+/// X0: 0x00000000107eaeda (276737754)
+/// X0: 0x000000004d45bfbc (1296416700)
+/// X0: 0x000000002814acec (672443628)

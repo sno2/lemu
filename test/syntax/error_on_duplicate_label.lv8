@@ -1,0 +1,8 @@
+foo:
+bar:
+baz:
+foo:
+
+/// test/syntax/error_on_duplicate_label.lv8:4:1: error: duplicate label name 'foo'
+/// foo:
+/// ^~~

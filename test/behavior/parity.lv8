@@ -1,0 +1,93 @@
+main:
+    // iseven(0)
+    ADDI X0, XZR, #0
+    PRNT X0
+    BL iseven
+    PRNT X0
+
+    // isodd(0)
+    ADDI X0, XZR, #0
+    PRNT X0
+    BL isodd
+    PRNT X0
+
+    // iseven(94)
+    ADDI X0, XZR, #94
+    PRNT X0
+    BL iseven
+    PRNT X0
+
+    // iseven(33)
+    ADDI X0, XZR, #33
+    PRNT X0
+    BL iseven
+    PRNT X0
+
+    // isodd(0x7f)
+    ADDI X0, XZR, #0x7f
+    PRNT X0
+    BL isodd
+    PRNT X0
+
+    B exit
+
+// Tail-recursion is obviously the way to go, but let's test stack usage.
+
+// int iseven(int x) { // x>=0
+//     if (!x) return 1;
+//     return isodd(x-1);
+// }
+iseven:
+    SUBIS X0, X0, #1
+    B.LT iseven0
+
+    SUBI SP, SP, #8
+    STUR LR, [SP, #0]
+
+    BL isodd
+
+    LDUR LR, [SP, #0]
+    ADDI SP, SP, #8
+    BR LR
+
+iseven0:
+    ADDI X0, XZR, #1
+    BR LR
+
+// int isodd(int x) { // x>=0
+//     if (!x) return 0;
+//     return iseven(x-1);
+// }
+isodd:
+    SUBIS X0, X0, #1
+    B.LT isodd0
+
+    SUBI SP, SP, #8
+    STUR LR, [SP, #0]
+
+    BL iseven
+
+    LDUR LR, [SP, #0]
+    ADDI SP, SP, #8
+    BR LR
+
+isodd0:
+    ADDI X0, XZR, #0
+    BR LR
+
+exit:
+
+/// X0: 000000000000000000 (0)
+/// X0: 0x0000000000000001 (1)
+
+/// X0: 000000000000000000 (0)
+/// X0: 000000000000000000 (0)
+
+/// X0: 0x000000000000005e (94)
+/// X0: 0x0000000000000001 (1)
+
+/// X0: 0x0000000000000021 (33)
+/// X0: 000000000000000000 (0)
+
+/// X0: 0x000000000000007f (127)
+/// X0: 0x0000000000000001 (1)

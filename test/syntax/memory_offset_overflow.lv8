@@ -1,0 +1,81 @@
+LDUR X1, [X2, -1]
+LDUR X1, [X2, 0x9f7]
+
+STUR X1, [X2, -1]
+STUR X1, [X2, 0x9f7]
+
+LDURSW X1, [X2, -1]
+LDURSW X1, [X2, 0x9f7]
+
+STURW X1, [X2, -1]
+STURW X1, [X2, 0x9f7]
+
+LDURH X1, [X2, -1]
+LDURH X1, [X2, 0x9f7]
+
+STURH X1, [X2, -1]
+STURH X1, [X2, 0x9f7]
+
+LDURB X1, [X2, -1]
+LDURB X1, [X2, 0x9f7]
+
+STURB X1, [X2, -1]
+STURB X1, [X2, 0x9f7]
+
+LDXR X1, [X2, -1]
+LDXR X1, [X2, 0x9f7]
+
+/// test/syntax/memory_offset_overflow.lv8:1:15: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDUR X1, [X2, -1]
+///               ^~
+/// test/syntax/memory_offset_overflow.lv8:2:15: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDUR X1, [X2, 0x9f7]
+///               ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:4:15: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STUR X1, [X2, -1]
+///               ^~
+/// test/syntax/memory_offset_overflow.lv8:5:15: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STUR X1, [X2, 0x9f7]
+///               ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:7:17: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDURSW X1, [X2, -1]
+///                 ^~
+/// test/syntax/memory_offset_overflow.lv8:8:17: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDURSW X1, [X2, 0x9f7]
+///                 ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:10:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STURW X1, [X2, -1]
+///                ^~
+/// test/syntax/memory_offset_overflow.lv8:11:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STURW X1, [X2, 0x9f7]
+///                ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:13:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDURH X1, [X2, -1]
+///                ^~
+/// test/syntax/memory_offset_overflow.lv8:14:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDURH X1, [X2, 0x9f7]
+///                ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:16:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STURH X1, [X2, -1]
+///                ^~
+/// test/syntax/memory_offset_overflow.lv8:17:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STURH X1, [X2, 0x9f7]
+///                ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:19:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDURB X1, [X2, -1]
+///                ^~
+/// test/syntax/memory_offset_overflow.lv8:20:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDURB X1, [X2, 0x9f7]
+///                ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:22:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STURB X1, [X2, -1]
+///                ^~
+/// test/syntax/memory_offset_overflow.lv8:23:16: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// STURB X1, [X2, 0x9f7]
+///                ^~~~~
+/// test/syntax/memory_offset_overflow.lv8:25:15: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDXR X1, [X2, -1]
+///               ^~
+/// test/syntax/memory_offset_overflow.lv8:26:15: error: load/store offset is out of the range for a 9-bit unsigned integer
+/// LDXR X1, [X2, 0x9f7]
+///               ^~~~~

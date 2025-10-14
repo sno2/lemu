@@ -1,0 +1,9 @@
+asdf.b:
+    B asdf.b
+
+/// test/syntax/label_with_dot.lv8:1:1: error: label cannot contain '.'
+/// asdf.b:
+/// ^~~~~~
+/// test/syntax/label_with_dot.lv8:2:7: error: expected an identifier, got an invalid identifier
+///     B asdf.b
+///       ^~~~~~

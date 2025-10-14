@@ -1,0 +1,5 @@
+LSL X0, X0, #9999
+
+/// test/syntax/error_on_lsl_overflow.lv8:1:14: error: shift amount is out of the range for a 6-bit unsigned integer
+/// LSL X0, X0, #9999
+///              ^~~~

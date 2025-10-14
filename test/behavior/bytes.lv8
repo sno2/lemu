@@ -1,0 +1,79 @@
+///# -z
+
+B main
+
+// void dumpbytes(int *ptr, int value);
+dumpbytes:
+    PRNT X0
+    PRNT X1
+    STUR X1, [X0, #0]
+    LDURB X2, [X0, #0]
+    PRNT X2
+    LDURB X2, [X0, #1]
+    PRNT X2
+    LDURB X2, [X0, #2]
+    PRNT X2
+    LDURB X2, [X0, #3]
+    PRNT X2
+    LDURB X2, [X0, #4]
+    PRNT X2
+    LDURB X2, [X0, #5]
+    PRNT X2
+    LDURB X2, [X0, #6]
+    PRNT X2
+    LDURB X2, [X0, #7]
+    PRNT X2
+    PRNL
+    BR LR
+
+main:
+    ADDI X8, X8, #42
+    LSL X8, X8, #8
+    ADDI X8, X8, #59
+    LSL X8, X8, #8
+    ADDI X8, X8, #210
+    LSL X8, X8, #8
+    ADDI X8, X8, #197
+    LSL X8, X8, #8
+    ADDI X8, X8, #136
+    LSL X8, X8, #8
+    ADDI X8, X8, #246
+    LSL X8, X8, #8
+    ADDI X8, X8, #206
+    LSL X8, X8, #8
+    ADDI X8, X8, #100
+
+    // zero page
+    ADD X0, XZR, XZR
+    ADD X1, X8, XZR
+    BL dumpbytes
+
+    // stack memory
+    SUBI SP, SP, #8
+    ADD X0, SP, XZR
+    ADD X1, X8, XZR
+    BL dumpbytes
+    ADDI SP, SP, #8
+
+/// X0: 000000000000000000 (0)
+/// X1: 0x2a3bd2c588f6ce64 (3043257719067168356)
+/// X2: 0x000000000000002a (42)
+/// X2: 0x000000000000003b (59)
+/// X2: 0x00000000000000d2 (210)
+/// X2: 0x00000000000000c5 (197)
+/// X2: 0x0000000000000088 (136)
+/// X2: 0x00000000000000f6 (246)
+/// X2: 0x00000000000000ce (206)
+/// X2: 0x0000000000000064 (100)
+/// 
+/// X0: 0x0000007fffffffec (549755813868)
+/// X1: 0x2a3bd2c588f6ce64 (3043257719067168356)
+/// X2: 0x000000000000002a (42)
+/// X2: 0x000000000000003b (59)
+/// X2: 0x00000000000000d2 (210)
+/// X2: 0x00000000000000c5 (197)
+/// X2: 0x0000000000000088 (136)
+/// X2: 0x00000000000000f6 (246)
+/// X2: 0x00000000000000ce (206)
+/// X2: 0x0000000000000064 (100)
+/// 

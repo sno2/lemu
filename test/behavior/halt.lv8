@@ -1,0 +1,6 @@
+HALT
+
+/// breakpoint exception: reached halt
+/// test/behavior/halt.lv8:1:1 at 0x400000:
+/// HALT
+/// ^~~~

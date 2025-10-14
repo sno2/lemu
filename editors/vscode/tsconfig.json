@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "lib": ["ES2024", "webworker"],
+    "types": ["vscode"],
+    "module": "node16",
+    "moduleResolution": "node16",
+    "outDir": "./out",
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "declaration": true,
+    "stripInternal": true,
+    "sourceMap": true,
+    "declarationMap": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src"]
+}

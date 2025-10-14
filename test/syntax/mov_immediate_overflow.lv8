@@ -1,0 +1,9 @@
+MOVK X1, 99999, LSL 0
+MOVZ X1, 99999, LSL 0
+
+/// test/syntax/mov_immediate_overflow.lv8:1:10: error: move immediate is out of the range for a 16-bit unsigned integer
+/// MOVK X1, 99999, LSL 0
+///          ^~~~~
+/// test/syntax/mov_immediate_overflow.lv8:2:10: error: move immediate is out of the range for a 16-bit unsigned integer
+/// MOVZ X1, 99999, LSL 0
+///          ^~~~~

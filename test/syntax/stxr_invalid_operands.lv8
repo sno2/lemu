@@ -1,0 +1,21 @@
+STXR S0, X0, [X2]
+STXR X0, S0, [X2]
+STXR X0, X0, [S2]
+STXR X0, X0, [D2]
+STXR X0, X0, [#0]
+
+/// test/syntax/stxr_invalid_operands.lv8:1:6: error: expected an X register, got an S register
+/// STXR S0, X0, [X2]
+///      ^~
+/// test/syntax/stxr_invalid_operands.lv8:2:10: error: expected an X register, got an S register
+/// STXR X0, S0, [X2]
+///          ^~
+/// test/syntax/stxr_invalid_operands.lv8:3:15: error: expected an X register, got an S register
+/// STXR X0, X0, [S2]
+///               ^~
+/// test/syntax/stxr_invalid_operands.lv8:4:15: error: expected an X register, got a D register
+/// STXR X0, X0, [D2]
+///               ^~
+/// test/syntax/stxr_invalid_operands.lv8:5:16: error: expected an X register, got an integer
+/// STXR X0, X0, [#0]
+///                ^

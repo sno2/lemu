@@ -1,0 +1,24 @@
+///# -z
+
+// X0 = 4088 (last zero page 8-byte address)
+ADDI X0, XZR, #1022
+ADDI X1, XZR, #4
+MUL X0, X0, X1
+
+// Mem[X0] = -1
+SUBI X3, XZR, #1
+STUR X3, [X0, #0]
+
+// X2 = Mem[X0]
+LDUR X2, [X0, #0]
+PRNT X2
+
+// X2 = Mem[X0+1] (exception from past zpg len)
+LDUR X2, [X0, #1]
+PRNT X2 // unreachable
+
+/// X2: 0xffffffffffffffff (18446744073709551615)
+/// data exception: invalid load to zero page address at 0xff9
+/// test/behavior/zpg_bounds.lv8:17:1 at 0x40001c:
+/// LDUR X2, [X0, #1]
+/// ^~~~

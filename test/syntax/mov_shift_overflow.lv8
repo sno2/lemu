@@ -1,0 +1,9 @@
+MOVK X1, 999, LSL 1
+MOVZ X1, 999, LSL -2
+
+/// test/syntax/mov_shift_overflow.lv8:1:19: error: move shift amount is not 0, 16, 32, or 48
+/// MOVK X1, 999, LSL 1
+///                   ^
+/// test/syntax/mov_shift_overflow.lv8:2:19: error: move shift amount is not 0, 16, 32, or 48
+/// MOVZ X1, 999, LSL -2
+///                   ^~

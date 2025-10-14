@@ -1,0 +1,9 @@
+ADDI X0, XZR, #9
+STUR X0, [XZR, #0]
+LDUR X1, [XZR, #0]
+PRNT X1
+
+/// data exception: invalid store to reserved address at 0x0
+/// test/behavior/zpg_fail.lv8:2:1 at 0x400004:
+/// STUR X0, [XZR, #0]
+/// ^~~~

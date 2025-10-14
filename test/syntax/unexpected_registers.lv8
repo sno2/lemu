@@ -1,0 +1,92 @@
+ADD S0, S1, S2
+ADD D0, D1, D2
+
+SUB S0, S1, S2
+SUB D0, D1, D2
+
+ADDI S0, S1, 6
+ADDI D0, D1, 6
+
+ADDIS S0, S1, 6
+ADDIS D0, D1, 6
+
+SUBI S0, S1, 6
+SUBI D0, D1, 6
+
+SUBIS S0, S1, 6
+SUBIS D0, D1, 6
+
+FADDS X0, X1, X2
+FADDS D0, D1, D2
+
+FADDD X0, X1, X2
+FADDD S0, S1, S2
+
+CBNZ S0, foo
+CBNZ D0, foo
+
+CBZ S0, foo
+CBZ D0, foo
+
+foo:
+
+/// test/syntax/unexpected_registers.lv8:1:5: error: expected an X register, got an S register
+/// ADD S0, S1, S2
+///     ^~
+/// test/syntax/unexpected_registers.lv8:2:5: error: expected an X register, got a D register
+/// ADD D0, D1, D2
+///     ^~
+/// test/syntax/unexpected_registers.lv8:4:5: error: expected an X register, got an S register
+/// SUB S0, S1, S2
+///     ^~
+/// test/syntax/unexpected_registers.lv8:5:5: error: expected an X register, got a D register
+/// SUB D0, D1, D2
+///     ^~
+/// test/syntax/unexpected_registers.lv8:7:6: error: expected an X register, got an S register
+/// ADDI S0, S1, 6
+///      ^~
+/// test/syntax/unexpected_registers.lv8:8:6: error: expected an X register, got a D register
+/// ADDI D0, D1, 6
+///      ^~
+/// test/syntax/unexpected_registers.lv8:10:7: error: expected an X register, got an S register
+/// ADDIS S0, S1, 6
+///       ^~
+/// test/syntax/unexpected_registers.lv8:11:7: error: expected an X register, got a D register
+/// ADDIS D0, D1, 6
+///       ^~
+/// test/syntax/unexpected_registers.lv8:13:6: error: expected an X register, got an S register
+/// SUBI S0, S1, 6
+///      ^~
+/// test/syntax/unexpected_registers.lv8:14:6: error: expected an X register, got a D register
+/// SUBI D0, D1, 6
+///      ^~
+/// test/syntax/unexpected_registers.lv8:16:7: error: expected an X register, got an S register
+/// SUBIS S0, S1, 6
+///       ^~
+/// test/syntax/unexpected_registers.lv8:17:7: error: expected an X register, got a D register
+/// SUBIS D0, D1, 6
+///       ^~
+/// test/syntax/unexpected_registers.lv8:19:7: error: expected an S register, got an X register
+/// FADDS X0, X1, X2
+///       ^~
+/// test/syntax/unexpected_registers.lv8:20:7: error: expected an S register, got a D register
+/// FADDS D0, D1, D2
+///       ^~
+/// test/syntax/unexpected_registers.lv8:22:7: error: expected a D register, got an X register
+/// FADDD X0, X1, X2
+///       ^~
+/// test/syntax/unexpected_registers.lv8:23:7: error: expected a D register, got an S register
+/// FADDD S0, S1, S2
+///       ^~
+/// test/syntax/unexpected_registers.lv8:25:6: error: expected an X register, got an S register
+/// CBNZ S0, foo
+///      ^~
+/// test/syntax/unexpected_registers.lv8:26:6: error: expected an X register, got a D register
+/// CBNZ D0, foo
+///      ^~
+/// test/syntax/unexpected_registers.lv8:28:5: error: expected an X register, got an S register
+/// CBZ S0, foo
+///     ^~
+/// test/syntax/unexpected_registers.lv8:29:5: error: expected an X register, got a D register
+/// CBZ D0, foo
+///     ^~

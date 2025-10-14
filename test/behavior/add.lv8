@@ -1,0 +1,33 @@
+main:
+    // add(9, 12)
+    ADDI X0, XZR, #9
+    ADDI X1, XZR, #12
+    BL add
+    PRNT X0
+
+    // add(-24, -12)
+    ADDI X0, XZR, #-24
+    ADDI X1, XZR, #-12
+    BL add
+    PRNT X0
+
+    // add(0, 0)
+    ADDI X0, XZR, #0
+    ADDI X1, XZR, #0
+    BL add
+    PRNT X0
+
+    B exit
+
+// int add(int a, int b) {
+//     return a + b;
+// }
+add:
+    ADD X0, X0, X1
+    BR LR
+
+exit:
+
+/// X0: 0x0000000000000015 (21)
+/// X0: 0xffffffffffffffdc (18446744073709551580)
+/// X0: 000000000000000000 (0)

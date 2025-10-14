@@ -1,0 +1,64 @@
+B main
+
+// int popcnt(int x) {
+//     int cnt = 0;
+//     while (x) {
+//         cnt += x & 1;
+//         x >>= 1;
+//     }
+//     return cnt;
+// }
+popcnt:
+    ADDI X1, XZR, #0
+    B popcnt0
+
+popcnt0:
+    CBZ X0, popcnt1
+    ANDI X2, X0, #1
+    ADD X1, X1, X2
+    LSR X0, X0, #1
+    B popcnt0
+
+popcnt1:
+    ADDI X0, X1, #0
+    BR LR
+
+main:
+    MOVZ X0, #0
+    PRNT X0
+    BL popcnt
+    PRNT X0
+    PRNL
+
+    MOVZ X0, #0b1111001000100000
+    PRNT X0
+    BL popcnt
+    PRNT X0
+    PRNL
+
+    MOVZ X0, #0b1011001010101111, LSL 32
+    PRNT X0
+    BL popcnt
+    PRNT X0
+    PRNL
+
+    EOR X0, X0, X0
+    MOVZ X0, #0b1111111111111111, LSL 0
+    MOVK X0, #0b1111111111111111, LSL 16
+    MOVK X0, #0b1111111111111111, LSL 32
+    MOVK X0, #0b0111111111111111, LSL 48
+    PRNT X0
+    BL popcnt
+    PRNT X0
+
+/// X0: 000000000000000000 (0)
+/// X0: 000000000000000000 (0)
+/// 
+/// X0: 0x000000000000f220 (61984)
+/// X0: 0x0000000000000006 (6)
+/// 
+/// X0: 0x0000b2af00000000 (196464689020928)
+/// X0: 0x000000000000000a (10)
+/// 
+/// X0: 0x7fffffffffffffff (9223372036854775807)
+/// X0: 0x000000000000003f (63)

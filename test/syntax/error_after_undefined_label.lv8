@@ -1,0 +1,8 @@
+B i6N j
+
+/// test/syntax/error_after_undefined_label.lv8:1:7: error: expected a newline, got an identifier
+/// B i6N j
+///       ^
+/// test/syntax/error_after_undefined_label.lv8:1:7: error: use of undeclared label 'j'
+/// B i6N j
+///       ^

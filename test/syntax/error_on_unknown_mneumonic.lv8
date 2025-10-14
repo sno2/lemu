@@ -1,0 +1,5 @@
+FOO
+
+/// test/syntax/error_on_unknown_mneumonic.lv8:1:1: error: unknown instruction mneumonic
+/// FOO
+/// ^~~

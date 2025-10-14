@@ -1,0 +1,32 @@
+ADDI X0, X1, -9999
+ADDIS X2, X3, 0xffff
+
+SUBI X0, X1, 0xffff
+SUBIS X2, X3, 0xffff
+
+ANDI X4, X5, 0xffff
+ANDIS X6, X7, 0xffff
+
+ORRI X0, X0, 0xffff
+
+/// test/syntax/arith_immediate_overflow.lv8:1:14: error: immediate is out of the range for a 12-bit signed integer
+/// ADDI X0, X1, -9999
+///              ^~~~~
+/// test/syntax/arith_immediate_overflow.lv8:2:15: error: immediate is out of the range for a 12-bit signed integer
+/// ADDIS X2, X3, 0xffff
+///               ^~~~~~
+/// test/syntax/arith_immediate_overflow.lv8:4:14: error: immediate is out of the range for a 12-bit signed integer
+/// SUBI X0, X1, 0xffff
+///              ^~~~~~
+/// test/syntax/arith_immediate_overflow.lv8:5:15: error: immediate is out of the range for a 12-bit signed integer
+/// SUBIS X2, X3, 0xffff
+///               ^~~~~~
+/// test/syntax/arith_immediate_overflow.lv8:7:14: error: immediate is out of the range for a 12-bit signed integer
+/// ANDI X4, X5, 0xffff
+///              ^~~~~~
+/// test/syntax/arith_immediate_overflow.lv8:8:15: error: immediate is out of the range for a 12-bit signed integer
+/// ANDIS X6, X7, 0xffff
+///               ^~~~~~
+/// test/syntax/arith_immediate_overflow.lv8:10:14: error: immediate is out of the range for a 12-bit signed integer
+/// ORRI X0, X0, 0xffff
+///              ^~~~~~

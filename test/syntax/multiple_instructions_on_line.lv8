@@ -1,0 +1,6 @@
+ADD X0, X0, X0 HALT
+HALT
+
+/// test/syntax/multiple_instructions_on_line.lv8:1:16: error: expected a newline, got an identifier
+/// ADD X0, X0, X0 HALT
+///                ^~~~

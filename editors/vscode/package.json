@@ -1,0 +1,87 @@
+{
+  "name": "lemu",
+  "description": "LEGv8 language support.",
+  "author": "Carter Snook",
+  "license": "MIT",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sno2/lemu",
+    "directory": "editors/vscode"
+  },
+  "publisher": "sno2",
+  "categories": [],
+  "keywords": [
+    "LEGv8",
+    "Emulator",
+    "Assembly"
+  ],
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "main": "./out/extension",
+  "contributes": {
+    "configuration": {
+      "title": "lemu",
+      "properties": {
+        "lemu.exePath": {
+          "type": "string",
+          "description": "Path to the lemu executable. Defaults to 'lemu' in PATH."
+        }
+      }
+    },
+    "configurationDefaults": {
+      "[LEGv8]": {
+        "editor.colorDecorators": false
+      }
+    },
+    "languages": [
+      {
+        "id": "LEGv8",
+        "aliases": [
+          "LEGv8",
+          "legv8"
+        ],
+        "extensions": [
+          ".lv8",
+          ".legv8",
+          ".S"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "LEGv8",
+        "scopeName": "source.legv8",
+        "path": "./syntaxes/legv8.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "LEGv8",
+        "path": "legv8.code-snippets"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "lint": "eslint"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@stylistic/eslint-plugin": "^2.9.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^22",
+    "@types/vscode": "^1.104.0",
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}
