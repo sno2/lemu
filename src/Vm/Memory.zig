@@ -81,7 +81,7 @@ fn accessDynamicMemory(mem: *Memory, index: u64) Error![]u8 {
     if (!gop.found_existing) {
         gop.value_ptr.* = try mem.gpa.alloc(u8, mem.page_len);
     }
-    return gop.value_ptr.*[index % mem.page_len ..];
+    return gop.value_ptr.*[@intCast(index % mem.page_len)..]; // @intCast required for wasi
 }
 
 pub fn loadAlignedReadonlyMemory(mem: *Memory, index: usize) Error!u32 {
