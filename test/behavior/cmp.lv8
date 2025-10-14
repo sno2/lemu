@@ -1,0 +1,19 @@
+CMP XZR, XZR
+B.EQ label1
+PRNT X0
+B label2
+label1:
+PRNT X1
+label2:
+
+ADDI X0, XZR, #9
+CMP XZR, X0
+B.LE label3
+PRNT X0
+B label4
+label3:
+PRNT X1
+label4:
+
+/// X1: 000000000000000000 (0)
+/// X1: 000000000000000000 (0)

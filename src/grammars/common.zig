@@ -12,7 +12,7 @@ pub const regex = struct {
 
     pub fn writeInstruction(writer: *std.io.Writer, double_escape: bool) !void {
         const start = "\\b(";
-        const end = "|B|MOV)\\b";
+        const end = "|B|MOV|LDA|CMPI|CMP)\\b";
 
         if (double_escape) {
             try EscapeFmt.init(start).format(writer);

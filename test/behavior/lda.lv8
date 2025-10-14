@@ -1,0 +1,14 @@
+label1:
+LDA X0, label1
+PRNT X0
+
+LDA X0, label2
+BR X0
+
+PRNT XZR // unreachable
+
+label2:
+PRNT X0
+
+/// X0: 0x0000000000400000 (4194304)
+/// X0: 0x0000000000400024 (4194340)

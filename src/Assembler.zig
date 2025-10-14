@@ -6,6 +6,7 @@ pub const Lexer = @import("Assembler/Lexer.zig");
 
 const Compilation = @import("Compilation.zig");
 const Instruction = @import("instruction.zig").Instruction;
+const Memory = @import("Vm/Memory.zig");
 
 const Assembler = @This();
 
@@ -46,6 +47,7 @@ const UndefinedLabel = struct {
     pub const Format = enum {
         b,
         cb,
+        lda,
     };
 };
 
@@ -197,6 +199,82 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
             _ = try assembler.expectToken(.@",");
             instruction.instruction.r.rn = (try assembler.expectToken(.x)).token.x;
             instruction.instruction.r.rm = 31;
+            return;
+        } else if (std.mem.eql(u8, identifier, "LDA")) {
+            const result = (try assembler.expectToken(.x)).token.x;
+            _ = try assembler.expectToken(.@",");
+            const label_tok = try assembler.expectToken(.identifier);
+            const label_name = label_tok.source_range.slice(assembler.lex.source);
+            const maybe_label = assembler.labels.get(label_name);
+
+            var instruction: AnnotatedInstruction = .{
+                .source_start = @intCast(identifier_tok.source_range.start),
+                .instruction = @bitCast(@as(u32, 0)),
+                .instruction_codec_tag = .movz,
+                .branch_label_index = null,
+            };
+            instruction.instruction.setTag(.movz);
+            if (maybe_label == null) {
+                const gop = try assembler.undefined_labels.getOrPut(assembler.gpa, label_name);
+                if (!gop.found_existing) {
+                    gop.value_ptr.* = .empty;
+                }
+                try gop.value_ptr.append(assembler.gpa, .{
+                    .format = .lda,
+                    .instruction_index = @intCast(assembler.instructions.len),
+                });
+            }
+
+            var addr: u64 = if (maybe_label) |label| Memory.text_start + 4 * label.instruction_index else std.math.maxInt(u64);
+            for (0..4) |half| {
+                instruction.instruction.iw.mov_immediate = @truncate(addr);
+                addr >>= 16;
+                instruction.instruction.iw.shamtx16 = @intCast(half);
+                instruction.instruction.iw.rd = result;
+                if (half == 0 or instruction.instruction.iw.mov_immediate != 0) {
+                    try assembler.instructions.append(assembler.gpa, instruction);
+                }
+                instruction.instruction.setTag(.movk);
+            }
+
+            return;
+        } else if (std.mem.eql(u8, identifier, "CMP")) {
+            var instruction: AnnotatedInstruction = .{
+                .source_start = @intCast(identifier_tok.source_range.start),
+                .instruction = @bitCast(@as(u32, 0)),
+                .instruction_codec_tag = .subs,
+                .branch_label_index = null,
+            };
+            instruction.instruction.setTag(.subs);
+            try assembler.instructions.ensureUnusedCapacity(assembler.gpa, 1);
+            defer assembler.instructions.appendAssumeCapacity(instruction);
+
+            instruction.instruction.r.rd = 31;
+            instruction.instruction.r.rn = (try assembler.expectToken(.x)).token.x;
+            _ = try assembler.expectToken(.@",");
+            instruction.instruction.r.rm = (try assembler.expectToken(.x)).token.x;
+            return;
+        } else if (std.mem.eql(u8, identifier, "CMPI")) {
+            var instruction: AnnotatedInstruction = .{
+                .source_start = @intCast(identifier_tok.source_range.start),
+                .instruction = @bitCast(@as(u32, 0)),
+                .instruction_codec_tag = .subis,
+                .branch_label_index = null,
+            };
+            instruction.instruction.setTag(.subis);
+            try assembler.instructions.ensureUnusedCapacity(assembler.gpa, 1);
+            defer assembler.instructions.appendAssumeCapacity(instruction);
+
+            instruction.instruction.i.rd = 31;
+            instruction.instruction.i.rn = (try assembler.expectToken(.x)).token.x;
+            _ = try assembler.expectToken(.@",");
+            const immediate_tok = try assembler.expectToken(.integer);
+            instruction.instruction.i.alu_immediate = std.fmt.parseInt(i12, immediate_tok.source_range.slice(assembler.lex.source), 0) catch {
+                try assembler.fail(.{
+                    .data = .immediate_overflow,
+                    .source_range = immediate_tok.source_range,
+                });
+            };
             return;
         } else {
             try assembler.fail(.{
@@ -350,6 +428,7 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
                         assembler.needs_relocations = true;
                         break :blk2;
                     },
+                    else => unreachable,
                 }
             } else {
                 const gop = try assembler.undefined_labels.getOrPut(assembler.gpa, name);
@@ -445,6 +524,13 @@ fn assembleLabel(assembler: *Assembler, identifier_tok: TokenResult) Error!void 
                         continue;
                     };
                     assembler.instructions.items(.instruction)[undefined_label.instruction_index].cb.cond_br_address = offset;
+                },
+                .lda => {
+                    var addr: u64 = Memory.text_start + 4 * assembler.instructions.len;
+                    for (assembler.instructions.items(.instruction)[undefined_label.instruction_index..][0..4]) |*instruction| {
+                        instruction.iw.mov_immediate = @truncate(addr);
+                        addr >>= 16;
+                    }
                 },
             }
         }
