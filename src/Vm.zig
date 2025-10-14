@@ -175,23 +175,28 @@ fn throwException(vm: *Vm, exception: Exception) Error!noreturn {
 }
 
 pub fn execute(vm: *Vm) !void {
-    loop: while (vm.memory.loadAlignedReadonlyMemory(vm.pc) catch null) |insn_bits| {
-        const insn: Instruction = @bitCast(insn_bits);
-        const opcode = insn.opcode();
-
-        inline for (Instruction.Codec.list) |codec| {
-            if (opcode >= codec.opcode_range.start and opcode <= codec.opcode_range.end and
-                (codec.format != .r or codec.format.r.shamt == null or insn.r.shamt == codec.format.r.shamt.?) and
-                (codec.format != .cb or codec.format.cb.op == null or insn.cb.rt == codec.format.cb.op.?))
-            {
-                try vm.executeOne(codec, insn);
-                continue :loop;
-            }
-        }
-    }
+    while (try vm.executeOne()) {}
 }
 
-fn executeOne(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction) !void {
+pub fn executeOne(vm: *Vm) !bool {
+    const bits = vm.memory.loadAlignedReadonlyMemory(vm.pc) catch return false;
+    const insn: Instruction = @bitCast(bits);
+    const opcode = insn.opcode();
+
+    inline for (Instruction.Codec.list) |codec| {
+        if (opcode >= codec.opcode_range.start and opcode <= codec.opcode_range.end and
+            (codec.format != .r or codec.format.r.shamt == null or insn.r.shamt == codec.format.r.shamt.?) and
+            (codec.format != .cb or codec.format.cb.op == null or insn.cb.rt == codec.format.cb.op.?))
+        {
+            try vm.executeOneInner(codec, insn);
+            return true;
+        }
+    }
+
+    try vm.throwException(.instr);
+}
+
+fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction) !void {
     switch (meta.tag) {
         .add, .adds => {
             vm.registers[insn.r.rd] = vm.executeAdd(meta, vm.registers[insn.r.rn], vm.registers[insn.r.rm]);
