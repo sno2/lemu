@@ -77,6 +77,7 @@ pub fn build(b: *std.Build) void {
         "test/syntax/label_with_dot.lv8",
         "test/syntax/memory_offset_overflow.lv8",
         "test/syntax/mov_immediate_overflow.lv8",
+        "test/syntax/mov_invalid.lv8",
         "test/syntax/mov_shift_overflow.lv8",
         "test/syntax/multiline_instruction.lv8",
         "test/syntax/multiple_instructions_on_line.lv8",

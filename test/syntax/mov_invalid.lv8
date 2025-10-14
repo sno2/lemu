@@ -1,0 +1,13 @@
+MOV X0, S0
+MOV S0, S0
+MOV D0, D0
+
+/// test/syntax/mov_invalid.lv8:1:9: error: expected an X register, got an S register
+/// MOV X0, S0
+///         ^~
+/// test/syntax/mov_invalid.lv8:2:5: error: expected an X register, got an S register
+/// MOV S0, S0
+///     ^~
+/// test/syntax/mov_invalid.lv8:3:5: error: expected an X register, got a D register
+/// MOV D0, D0
+///     ^~
