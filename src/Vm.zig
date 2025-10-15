@@ -34,6 +34,14 @@ double_registers: [32]f64 = @splat(0.0),
 exception: ?Exception = null,
 output: *std.io.Writer,
 
+pub fn reset(vm: *Vm) void {
+    vm.memory.reset();
+    vm.* = .{
+        .memory = vm.memory,
+        .output = vm.output,
+    };
+}
+
 /// Takes the role of the Exception Syndrome Register.
 pub const Exception = union(enum(u6)) {
     /// Unknown
@@ -63,6 +71,7 @@ pub const Exception = union(enum(u6)) {
     bkpt: enum {
         halt,
         dump,
+        debugger,
     } = 56,
 
     pub const Fmt = struct {
@@ -122,6 +131,7 @@ pub const Exception = union(enum(u6)) {
                 .bkpt => |bkpt| try writer.print("{s}\n", .{switch (bkpt) {
                     .halt => "reached halt",
                     .dump => "reached dump",
+                    .debugger => "debugger",
                 }}),
                 .pc => try writer.writeAll("invalid address\n"),
                 else => try writer.writeAll("\n"),
@@ -169,7 +179,7 @@ pub const Exception = union(enum(u6)) {
 
 pub const Error = error{ExceptionThrown} || std.mem.Allocator.Error;
 
-fn throwException(vm: *Vm, exception: Exception) Error!noreturn {
+pub fn throwException(vm: *Vm, exception: Exception) Error!noreturn {
     vm.exception = exception;
     return error.ExceptionThrown;
 }
@@ -460,12 +470,18 @@ fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction)
         .dump => {
             std.log.info("dump!", .{});
         },
-        .prnt => try vm.output.print("X{0d}: {2s}{1x:0>16} ({1d})\n", .{
-            insn.r.rd,
-            @as(u64, @bitCast(vm.registers[insn.r.rd])),
-            if (vm.registers[insn.r.rd] != 0) "0x" else "00",
-        }),
-        .prnl => try vm.output.writeByte('\n'),
+        .prnt => {
+            try vm.output.print("X{0d}: {2s}{1x:0>16} ({1d})\n", .{
+                insn.r.rd,
+                @as(u64, @bitCast(vm.registers[insn.r.rd])),
+                if (vm.registers[insn.r.rd] != 0) "0x" else "00",
+            });
+            try vm.output.flush();
+        },
+        .prnl => {
+            try vm.output.writeByte('\n');
+            try vm.output.flush();
+        },
         .time => vm.registers[insn.r.rd] = std.time.milliTimestamp(),
     }
 

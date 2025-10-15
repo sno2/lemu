@@ -59,6 +59,15 @@ pub fn deinit(memory: *Memory, gpa: std.mem.Allocator) void {
     memory.readonly.deinit(gpa);
 }
 
+pub fn reset(memory: *Memory) void {
+    for (memory.dynamic.values()) |page| {
+        memory.gpa.free(page);
+    }
+    memory.dynamic.clearRetainingCapacity();
+    @memset(memory.zero_page.items, 0);
+    memory.readonly.clearRetainingCapacity();
+}
+
 fn accessZeroPageMemory(mem: *Memory, comptime T: type, index: u32) Error!*align(1) T {
     if (index >= mem.zero_page.items.len or mem.zero_page.items[index..].len < @sizeOf(T)) {
         return error.InvalidAddress;

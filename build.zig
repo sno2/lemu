@@ -5,11 +5,13 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lsp = b.option(bool, "lsp", "Include LSP support (defaults to true)") orelse true;
+    const debugger = b.option(bool, "debugger", "Include debugger support (defaults to true)") orelse true;
     const strip = b.option(bool, "strip", "Strip debug information") orelse false;
     const fuzz_seed = b.option(u64, "fuzz-seed", "Fuzz seed");
 
     const build_options = b.addOptions();
     build_options.addOption(bool, "lsp", lsp);
+    build_options.addOption(bool, "debugger", debugger);
     const build_options_mod = build_options.createModule();
 
     const mod = b.addModule("lemu", .{
@@ -46,6 +48,12 @@ pub fn build(b: *std.Build) void {
         exe.root_module.addImport("lsp", lsp_mod);
     }
 
+    if (debugger) blk: {
+        const zigline_dep = b.lazyDependency("zigline", .{}) orelse break :blk;
+        const zigline_mod = zigline_dep.module("zigline");
+        exe.root_module.addImport("zigline", zigline_mod);
+    }
+
     const mod_tests = b.addTest(.{ .root_module = mod });
     b.installArtifact(mod_tests);
 
@@ -61,9 +69,10 @@ pub fn build(b: *std.Build) void {
     const test_runner = b.addExecutable(.{
         .name = "test_runner",
         .root_module = b.createModule(.{
-            .target = b.graph.host,
+            .target = target,
             .optimize = optimize,
             .root_source_file = b.path("src/test_runner.zig"),
+            .link_libc = if (target.result.os.tag == .wasi) true else null,
         }),
     });
 
@@ -133,7 +142,7 @@ pub fn build(b: *std.Build) void {
         const fuzz_runner_exe = b.addExecutable(.{
             .name = "fuzz_runner",
             .root_module = b.createModule(.{
-                .target = b.graph.host,
+                .target = target,
                 .optimize = optimize,
                 .root_source_file = b.path("src/fuzz_runner.zig"),
                 .imports = &.{

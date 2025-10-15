@@ -9,6 +9,11 @@
             .hash = "lsp_kit-0.1.0-bi_PLzAyCgClDh8_M0U9Q50ysdsQBuRuBTZfwg6rZPd6",
             .lazy = true,
         },
+        .zigline = .{
+            .url = "git+https://github.com/alimpfard/zigline#cd6ebe9efb5d79738090b03460a1ea6609f1380d",
+            .hash = "zigline-0.1.0-6llsB4CEAgA6Oy58ssb-9qe0Fyjoz0OfcK3zfnAmChTA",
+            .lazy = true,
+        },
     },
     .paths = .{
         "build.zig",

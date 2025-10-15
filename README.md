@@ -3,6 +3,7 @@
 A LEGv8 developer toolkit with the following features:
 
 - LEGv8 Emulator
+- Command-Line Debugger
 - Language Server (LSP)
 - VS Code Extension (snippets, syntax highlighting)
 
@@ -12,10 +13,10 @@ A LEGv8 developer toolkit with the following features:
 Lemu: A LEGv8 toolkit.
 
 Usage:
-
     -h, --help           Display this help and exit.
     -z, --zero-page      Provide a non-standard memory space of 4096 bytes starting from 0x0.
     -l, --limit-errors   Limit to the first 3 compile errors.
+    -d, --debug          Enable debugging.
     <file>               Assemble and run the file.
     --stdio              Start the LSP (used by editors).
 ```
