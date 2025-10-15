@@ -14,9 +14,24 @@ pub const Instruction = packed union {
         std.debug.assert(@bitSizeOf(Instruction) == @bitSizeOf(u32));
     }
 
-    pub fn opcode(insn: Instruction) u11 {
+    pub fn getOpcode(insn: Instruction) u11 {
         const bits: *const u32 = @ptrCast(&insn);
         return @intCast(bits.* >> 21);
+    }
+
+    pub fn getTag(instruction: Instruction) ?Instruction.Codec.Tag {
+        const opcode = instruction.getOpcode();
+
+        inline for (Instruction.Codec.list) |codec| {
+            if (opcode >= codec.opcode_range.start and opcode <= codec.opcode_range.end and
+                (codec.format != .r or codec.format.r.shamt == null or instruction.r.shamt == codec.format.r.shamt.?) and
+                (codec.format != .cb or codec.format.cb.op == null or instruction.cb.rt == codec.format.cb.op.?))
+            {
+                return codec.tag;
+            }
+        }
+
+        return null;
     }
 
     pub fn setTag(instruction: *Instruction, tag: Instruction.Codec.Tag) void {

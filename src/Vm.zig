@@ -191,19 +191,11 @@ pub fn execute(vm: *Vm) !void {
 pub fn executeOne(vm: *Vm) !bool {
     const bits = vm.memory.loadAlignedReadonlyMemory(vm.pc) catch return false;
     const insn: Instruction = @bitCast(bits);
-    const opcode = insn.opcode();
 
-    inline for (Instruction.Codec.list) |codec| {
-        if (opcode >= codec.opcode_range.start and opcode <= codec.opcode_range.end and
-            (codec.format != .r or codec.format.r.shamt == null or insn.r.shamt == codec.format.r.shamt.?) and
-            (codec.format != .cb or codec.format.cb.op == null or insn.cb.rt == codec.format.cb.op.?))
-        {
-            try vm.executeOneInner(codec, insn);
-            return true;
-        }
+    switch (insn.getTag() orelse try vm.throwException(.instr)) {
+        inline else => |tag| try vm.executeOneInner(tag.get(), insn),
     }
-
-    try vm.throwException(.instr);
+    return true;
 }
 
 fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction) !void {
