@@ -33,6 +33,7 @@ pub fn build(b: *std.Build) void {
             .{ .name = "options", .module = build_options_mod },
         },
         .strip = strip,
+        .link_libc = if (target.result.os.tag == .windows) true else null,
     });
 
     const exe = b.addExecutable(.{
