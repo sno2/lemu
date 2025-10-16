@@ -193,6 +193,7 @@ pub fn executeOne(vm: *Vm) !bool {
     const insn: Instruction = @bitCast(bits);
 
     switch (insn.getTag() orelse try vm.throwException(.instr)) {
+        _ => unreachable,
         inline else => |tag| try vm.executeOneInner(tag.get(), insn),
     }
     return true;
@@ -200,6 +201,7 @@ pub fn executeOne(vm: *Vm) !bool {
 
 fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction) !void {
     switch (meta.tag) {
+        _ => comptime unreachable,
         .add, .adds => {
             vm.registers[insn.r.rd] = vm.executeAdd(meta, vm.registers[insn.r.rn], vm.registers[insn.r.rm]);
         },
@@ -542,7 +544,6 @@ fn executeAdd(vm: *Vm, comptime meta: Instruction.Codec, a: i64, b: i64) i64 {
         vm.overflow = overflow == 1;
         vm.carry = carry == 1;
     }
-
     return result;
 }
 
