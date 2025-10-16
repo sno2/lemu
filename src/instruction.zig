@@ -22,8 +22,7 @@ pub const Instruction = packed union {
     // Improves instruction decoding for most programs by ~40%.
     const null_tag: Codec.Tag = @enumFromInt(std.math.maxInt(u8));
     const fast_lookup = blk: {
-        var buf: [std.math.maxInt(u11) + 1]Codec.Tag = undefined;
-        @memset(&buf, null_tag);
+        var buf: [std.math.maxInt(u11) + 1]Codec.Tag = @splat(null_tag);
         for (Instruction.Codec.list) |codec| {
             if ((codec.format != .r or codec.format.r.shamt == null) and
                 (codec.format != .cb or codec.format.cb.op == null))
