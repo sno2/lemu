@@ -322,6 +322,17 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
                 .Xn => {
                     insn.r.rd = (try assembler.expectToken(.x)).token.x;
                 },
+                .prnt => {
+                    insn.r.rd, insn.r.rn = switch (assembler.lex.token) {
+                        .x => .{ (try assembler.expectToken(.x)).token.x, 0 },
+                        .s => .{ (try assembler.expectToken(.s)).token.s, 1 },
+                        .d => .{ (try assembler.expectToken(.d)).token.d, 2 },
+                        else => try assembler.fail(.{
+                            .data = .expected_x_s_d,
+                            .source_range = assembler.lex.sourceRange(),
+                        }),
+                    };
+                },
                 .@"Sn, Sn, Sn" => {
                     insn.r.rd = (try assembler.expectToken(.s)).token.s;
                     _ = try assembler.expectToken(.@",");
@@ -394,6 +405,38 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
                     _ = try assembler.expectToken(.@",");
                     _ = try assembler.expectToken(.@"[");
                     insn.d.dt_address = (try assembler.expectToken(.x)).token.x;
+                    _ = try assembler.expectToken(.@"]");
+                },
+                .@"Sn, [Xn, #]" => {
+                    insn.d.rt = (try assembler.expectToken(.s)).token.s;
+                    _ = try assembler.expectToken(.@",");
+                    _ = try assembler.expectToken(.@"[");
+                    insn.d.rn = (try assembler.expectToken(.x)).token.x;
+                    _ = try assembler.expectToken(.@",");
+                    const offset_tok = try assembler.expectToken(.integer);
+                    const offset = std.fmt.parseInt(u9, offset_tok.source_range.slice(assembler.lex.source), 0) catch {
+                        try assembler.fail(.{
+                            .data = .load_store_offset_overflow,
+                            .source_range = offset_tok.source_range,
+                        });
+                    };
+                    insn.d.dt_address = offset;
+                    _ = try assembler.expectToken(.@"]");
+                },
+                .@"Dn, [Xn, #]" => {
+                    insn.d.rt = (try assembler.expectToken(.d)).token.d;
+                    _ = try assembler.expectToken(.@",");
+                    _ = try assembler.expectToken(.@"[");
+                    insn.d.rn = (try assembler.expectToken(.x)).token.x;
+                    _ = try assembler.expectToken(.@",");
+                    const offset_tok = try assembler.expectToken(.integer);
+                    const offset = std.fmt.parseInt(u9, offset_tok.source_range.slice(assembler.lex.source), 0) catch {
+                        try assembler.fail(.{
+                            .data = .load_store_offset_overflow,
+                            .source_range = offset_tok.source_range,
+                        });
+                    };
+                    insn.d.dt_address = offset;
                     _ = try assembler.expectToken(.@"]");
                 },
             }

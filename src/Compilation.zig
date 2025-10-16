@@ -24,6 +24,7 @@ pub const Error = struct {
         duplicate_label_name: []const u8,
         undefined_label: []const u8,
         empty_label,
+        expected_x_s_d,
 
         pub fn format(self: Data, writer: *std.io.Writer) !void {
             switch (self) {
@@ -70,6 +71,9 @@ pub const Error = struct {
                 },
                 .empty_label => {
                     try writer.writeAll("label must have at least one instruction");
+                },
+                .expected_x_s_d => {
+                    try writer.writeAll("expected X, S, or D register");
                 },
             }
         }

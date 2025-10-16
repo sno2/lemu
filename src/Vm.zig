@@ -477,11 +477,19 @@ fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction)
             std.log.info("dump!", .{});
         },
         .prnt => {
-            try vm.output.print("X{0d}: {2s}{1x:0>16} ({1d})\n", .{
-                insn.r.rd,
-                @as(u64, @bitCast(vm.registers[insn.r.rd])),
-                if (vm.registers[insn.r.rd] != 0) "0x" else "00",
-            });
+            switch (insn.r.rn) {
+                0 => {
+                    try vm.output.print("X{0d}: {2s}{1x:0>16} ({1d})", .{
+                        insn.r.rd,
+                        @as(u64, @bitCast(vm.registers[insn.r.rd])),
+                        if (vm.registers[insn.r.rd] != 0) "0x" else "00",
+                    });
+                },
+                1 => try vm.output.print("S{d}: {}", .{ insn.r.rd, vm.single_registers[insn.r.rd] }),
+                2 => try vm.output.print("D{d}: {}", .{ insn.r.rd, vm.double_registers[insn.r.rd] }),
+                else => try vm.throwException(.instr),
+            }
+            try vm.output.writeByte('\n');
             try vm.output.flush();
         },
         .prnl => {
