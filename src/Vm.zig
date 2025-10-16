@@ -184,14 +184,26 @@ pub fn throwException(vm: *Vm, exception: Exception) Error!noreturn {
     return error.ExceptionThrown;
 }
 
+fn fetchInstruction(vm: *Vm) ?Instruction {
+    const bits = vm.memory.loadAlignedReadonlyMemory(vm.pc) catch return null;
+    const insn: Instruction = @bitCast(bits);
+    return insn;
+}
+
 pub fn execute(vm: *Vm) !void {
-    while (try vm.executeOne()) {}
+    var insn: Instruction = vm.fetchInstruction() orelse return;
+    loop: switch (insn.getTag() orelse try vm.throwException(.instr)) {
+        _ => unreachable,
+        inline else => |tag| {
+            try vm.executeOneInner(tag.get(), insn);
+            insn = vm.fetchInstruction() orelse return;
+            continue :loop insn.getTag() orelse try vm.throwException(.instr);
+        },
+    }
 }
 
 pub fn executeOne(vm: *Vm) !bool {
-    const bits = vm.memory.loadAlignedReadonlyMemory(vm.pc) catch return false;
-    const insn: Instruction = @bitCast(bits);
-
+    const insn = vm.fetchInstruction() orelse return false;
     switch (insn.getTag() orelse try vm.throwException(.instr)) {
         _ => unreachable,
         inline else => |tag| try vm.executeOneInner(tag.get(), insn),
