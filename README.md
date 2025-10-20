@@ -1,14 +1,18 @@
-![./lemu.svg](lemu.svg)
+![Lemu](lemu.svg)
 
-A toolkit for LEGv8, an academic ISA inspired by ARMv8 described in
-_Computer Organization And Design Arm Edition_.
+A toolkit for LEGv8, an academic ISA and assembly language inspired by ARMv8
+described in _Computer Organization And Design Arm Edition_ by Patterson and
+Hennessy.
 
 ## Features
 
 - **LEGv8 Emulator**: Assemble and execute LEGv8 code (`lemu <file>`).
-- **Command-Line Debugger**: Set breakpoints, step through instructions, and inspect registers (`lemu -d <file>`).
-- **Language Server (LSP)**: Syntax and assembler errors, goto definition, and hover information in your editor
-- **VS Code Extension**: Instruction snippets and syntax highlighting. Requires a `lemu` executable.
+- **Command-Line Debugger**: Set breakpoints, step through instructions, and
+  inspect registers (`lemu -d <file>`).
+- **Language Server (LSP)**: View syntax and compiler errors, goto definition,
+  and hover information in your editor.
+- **VS Code Extension**: Use instruction snippets and access the language server
+  features. Requires a `lemu` executable.
 
 ## Usage
 
@@ -48,22 +52,22 @@ The goal is to maintain instruction encoding and emulation compliance. However,
 there are still non-standard instructions such as `PRNT`, to enable
 printf-debugging.
 
-Please open issues for correctness problems.
+Lemu has its own test suite and has been fuzz tested against `legv8emul`, an
+emulator offered to students taking COM S 3210 at Iowa State University. This
+has allowed me to fix multiple bugs in Lemu and file issues for `legv8emul`.
 
-## Performance
-
-The emulator is optimized enough to compete with `legv8emul` for most programs.
-However, lemu has a slower startup time and usually consumes about 10% more
-memory compared to `legv8emul`.
-
-```
-$ uname -a
-Linux archlinux 6.17.2-arch1-1 #1 SMP PREEMPT_DYNAMIC Sun, 12 Oct 2025 12:45:18 +0000 x86_64 GNU/Linux
-```
+Although the most important metric is compliance, Lemu is not terribly slow
+either. For example, it is able to beat `legv8emul` by 67.3% for calculating
+the fibonacci sequence of 1 to 30 with recursion. When optimizing the emulator,
+the largest points for gains were (1) optimizing opcode decoding to use a lookup
+table and (2) using [Zig's labeled switch loop](https://ziglang.org/documentation/0.15.2/#Labeled-switch)
+for the instruction loop.
 
 <details>
-<summary>67% faster recursive fibonacci sequence from 1 to 30</summary>
-<pre><code>$ zig build -Doptimize=ReleaseFast -Dstrip
+<summary>Fibonacci benchmark details</summary>
+<pre><code>$ uname -a
+Linux archlinux 6.17.2-arch1-1 #1 SMP PREEMPT_DYNAMIC Sun, 12 Oct 2025 12:45:18 +0000 x86_64 GNU/Linux
+$ zig build -Doptimize=ReleaseFast -Dstrip
 $ poop "lemu test/behavior/fib.lv8" "./legv8emul test/behavior/fib.lv8 -s 2000"
 Benchmark 1 (32 runs): lemu test/behavior/fib.lv8
   measurement          mean ± σ            min … max           outliers         delta
@@ -84,8 +88,6 @@ Benchmark 2 (20 runs): ./legv8emul test/behavior/fib.lv8 -s 2000
   cache_misses       2.14K  ±  748      1.33K  … 3.80K           0 ( 0%)        💩+ 52.7% ± 32.5%
   branch_misses      1.35M  ± 34.2K     1.25M  … 1.37M           4 (20%)        💩+ 33.0% ±  2.4%
 </code></pre></details>
-
-Feel free to open issues for performance problems.
 
 ## Testing
 
