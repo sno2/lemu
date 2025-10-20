@@ -222,6 +222,17 @@ pub fn main() !u8 {
                             continue;
                         },
                     }
+                } else if (std.mem.eql(u8, command, "register")) {
+                    defer lex.next();
+                    break :cmd .{ .@"read-register" = switch (lex.token) {
+                        .x => |x| .{ .x = x },
+                        .s => |s| .{ .s = s },
+                        .d => |d| .{ .d = d },
+                        else => {
+                            std.log.err("expected a register", .{});
+                            continue;
+                        },
+                    } };
                 } else if (std.mem.eql(u8, command, "continue")) {
                     break :cmd .@"continue";
                 } else {
@@ -275,6 +286,7 @@ pub fn main() !u8 {
     var vm: lemu.Vm = .{
         .memory = .init(gpa),
         .output = &stdout_writer.interface,
+        .tty_config = .detect(stdout),
     };
     defer vm.memory.deinit(gpa);
     try vm.memory.readonly.appendSlice(gpa, @ptrCast(assembler.instructions.items(.instruction)));

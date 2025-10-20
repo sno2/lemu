@@ -22,6 +22,7 @@ pub const Command = union(enum) {
         label: []const u8,
         line: usize,
     },
+    @"read-register": Vm.Register,
 
     pub const descriptions = std.enums.directEnumArray(std.meta.Tag(Command), []const u8, 0, .{
         .@"set-file" = "Set the current file path.",
@@ -54,6 +55,7 @@ pub fn init(
         .vm = .{
             .memory = .init(gpa),
             .output = stdout,
+            .tty_config = tty_config,
         },
         .tty_config = tty_config,
     };
@@ -124,8 +126,22 @@ pub fn execute(debugger: *Debugger, command: Command) Error!void {
                         }
                     }
                 },
-                .line => @panic("TODO"),
+                .line => unreachable,
+                // .line => |line| {
+                //     var i: usize = 0;
+                //     var cur_line: usize = 0;
+                //     while (cur_line < line) {
+                //         if (std.mem.indexOfScalarPos(u8, debugger.assembler.lex.source, i, '\n')) |index| {
+                //             i = index + 1;
+                //         }
+                //     }
+                // },
             }
+        },
+        .@"read-register" => |reg| {
+            try debugger.vm.printRegister(reg);
+            try debugger.vm.output.writeByte('\n');
+            try debugger.vm.output.flush();
         },
     }
 }
@@ -150,6 +166,7 @@ fn executeInstruction(debugger: *Debugger) Error!bool {
     return debugger.vm.executeOne() catch |e| {
         if (e == error.ExceptionThrown) {
             try debugger.printVmException(debugger.vm.exception.?);
+            return true;
         }
         return e;
     };

@@ -33,6 +33,7 @@ single_registers: [32]f32 = @splat(0.0),
 double_registers: [32]f64 = @splat(0.0),
 exception: ?Exception = null,
 output: *std.io.Writer,
+tty_config: std.io.tty.Config,
 
 pub fn reset(vm: *Vm) void {
     vm.memory.reset();
@@ -477,18 +478,12 @@ fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction)
             std.log.info("dump!", .{});
         },
         .prnt => {
-            switch (insn.r.rn) {
-                0 => {
-                    try vm.output.print("X{0d}: {2s}{1x:0>16} ({1d})", .{
-                        insn.r.rd,
-                        @as(u64, @bitCast(vm.registers[insn.r.rd])),
-                        if (vm.registers[insn.r.rd] != 0) "0x" else "00",
-                    });
-                },
-                1 => try vm.output.print("S{d}: {}", .{ insn.r.rd, vm.single_registers[insn.r.rd] }),
-                2 => try vm.output.print("D{d}: {}", .{ insn.r.rd, vm.double_registers[insn.r.rd] }),
+            try vm.printRegister(switch (insn.r.rn) {
+                0 => .{ .x = insn.r.rd },
+                1 => .{ .s = insn.r.rd },
+                2 => .{ .d = insn.r.rd },
                 else => try vm.throwException(.instr),
-            }
+            });
             try vm.output.writeByte('\n');
             try vm.output.flush();
         },
@@ -518,6 +513,56 @@ fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction)
         vm.registers[31] = 0;
     }
     vm.pc += 1;
+}
+
+pub const Register = union(enum(u8)) {
+    x: u5,
+    s: u5,
+    d: u5,
+};
+
+pub fn printRegister(vm: *Vm, register: Register) (std.Io.Writer.Error || std.Io.tty.Config.SetColorError)!void {
+    try vm.tty_config.setColor(vm.output, .green);
+    switch (register) {
+        inline else => |payload, tag| try vm.output.print([_]u8{std.ascii.toUpper(@tagName(tag)[0])} ++ "{d}: ", .{payload}),
+    }
+    try vm.tty_config.setColor(vm.output, .reset);
+
+    switch (register) {
+        .x => |x| {
+            try vm.tty_config.setColor(vm.output, .blue);
+            try vm.output.print("{1s}{0x:0>16}", .{
+                @as(u64, @bitCast(vm.registers[x])),
+                if (vm.registers[x] != 0) "0x" else "00",
+            });
+            try vm.tty_config.setColor(vm.output, .reset);
+            try vm.output.writeAll(" (");
+            try vm.tty_config.setColor(vm.output, .blue);
+            try vm.output.print("{d}", .{@as(u64, @bitCast(vm.registers[x]))});
+            try vm.tty_config.setColor(vm.output, .reset);
+            try vm.output.writeAll(")");
+        },
+        .s => |s| {
+            try vm.tty_config.setColor(vm.output, .blue);
+            try vm.output.print("{e}", .{vm.single_registers[s]});
+            try vm.tty_config.setColor(vm.output, .reset);
+            try vm.output.writeAll(" (");
+            try vm.tty_config.setColor(vm.output, .blue);
+            try vm.output.print("{}", .{vm.single_registers[s]});
+            try vm.tty_config.setColor(vm.output, .reset);
+            try vm.output.writeAll(")");
+        },
+        .d => |d| {
+            try vm.tty_config.setColor(vm.output, .blue);
+            try vm.output.print("{e}", .{vm.double_registers[d]});
+            try vm.tty_config.setColor(vm.output, .reset);
+            try vm.output.writeAll(" (");
+            try vm.tty_config.setColor(vm.output, .blue);
+            try vm.output.print("{}", .{vm.double_registers[d]});
+            try vm.tty_config.setColor(vm.output, .reset);
+            try vm.output.writeAll(")");
+        },
+    }
 }
 
 fn loadMemory(vm: *Vm, comptime T: type, addr: u64) Error!T {
