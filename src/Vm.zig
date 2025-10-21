@@ -147,7 +147,7 @@ pub const Exception = union(enum(u6)) {
                 .bkpt => |bkpt| try writer.print("{s}\n", .{switch (bkpt) {
                     .halt => "reached halt",
                     .dump => "reached dump",
-                    .debugger => "debugger",
+                    .debugger => "reached debugger breakpooint",
                 }}),
                 .pc => try writer.writeAll("invalid address\n"),
                 else => try writer.writeAll("\n"),

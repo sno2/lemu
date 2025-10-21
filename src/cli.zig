@@ -166,8 +166,14 @@ pub fn main() !u8 {
             },
         });
 
+        var prefix_buf: [48]u8 = undefined;
+        var prefix_writer = std.io.Writer.fixed(&prefix_buf);
+        try tty_config.setColor(&prefix_writer, .dim);
+        try prefix_writer.writeAll("(lemudb) ");
+        try tty_config.setColor(&prefix_writer, .reset);
+
         while (true) {
-            const line = editor.getLine("(lemudb) ") catch |err| switch (err) {
+            const line = editor.getLine(prefix_writer.buffered()) catch |err| switch (err) {
                 error.Eof => break,
                 else => return err,
             };
