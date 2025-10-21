@@ -40,24 +40,29 @@ vm: Vm,
 breakpoints: std.AutoArrayHashMapUnmanaged(usize, void),
 tty_config: std.io.tty.Config,
 
-pub fn init(
+pub const Options = struct {
     gpa: std.mem.Allocator,
-    stdout: *std.io.Writer,
-    tty_config: std.io.tty.Config,
     limit_errors: bool,
-) Debugger {
+    zero_page: bool,
+    stdout: *std.io.Writer,
+    tty_config: std.Io.tty.Config,
+};
+
+pub fn init(options: Options) std.mem.Allocator.Error!Debugger {
     return .{
-        .gpa = gpa,
+        .gpa = options.gpa,
         .source_label = null,
-        .limit_errors = limit_errors,
-        .assembler = .init(gpa, ""),
+        .limit_errors = options.limit_errors,
+        .assembler = .init(options.gpa, ""),
         .breakpoints = .empty,
-        .vm = .{
-            .memory = .init(gpa),
-            .output = stdout,
-            .tty_config = tty_config,
-        },
-        .tty_config = tty_config,
+        .vm = try .init(.{
+            .gpa = options.gpa,
+            .readonly_memory = &.{},
+            .zero_page = options.zero_page,
+            .output = options.stdout,
+            .tty_config = options.tty_config,
+        }),
+        .tty_config = options.tty_config,
     };
 }
 

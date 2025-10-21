@@ -35,12 +35,27 @@ exception: ?Exception = null,
 output: *std.io.Writer,
 tty_config: std.io.tty.Config,
 
-pub fn reset(vm: *Vm) void {
-    vm.memory.reset();
-    vm.* = .{
-        .memory = vm.memory,
-        .output = vm.output,
+pub const Options = struct {
+    gpa: std.mem.Allocator,
+    /// Copied using gpa.
+    readonly_memory: []const u32,
+    zero_page: bool,
+    output: *std.io.Writer,
+    tty_config: std.io.tty.Config,
+};
+
+pub fn init(options: Options) std.mem.Allocator.Error!Vm {
+    var vm: Vm = .{
+        .memory = .init(options.gpa),
+        .output = options.output,
+        .tty_config = options.tty_config,
     };
+    errdefer vm.memory.deinit(options.gpa);
+    try vm.memory.readonly.appendSlice(options.gpa, options.readonly_memory);
+    if (options.zero_page) {
+        try vm.memory.zero_page.appendNTimes(options.gpa, 0, 4096);
+    }
+    return vm;
 }
 
 /// Takes the role of the Exception Syndrome Register.

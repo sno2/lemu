@@ -150,7 +150,13 @@ pub fn main() !u8 {
         const tty_config: std.io.tty.Config = .detect(stdout_file);
         const writer = &stdout_writer.interface;
 
-        var debugger: lemu.Debugger = .init(gpa, writer, tty_config, args.@"limit-errors");
+        var debugger: lemu.Debugger = try .init(.{
+            .gpa = gpa,
+            .limit_errors = args.@"limit-errors",
+            .zero_page = args.@"zero-page",
+            .stdout = writer,
+            .tty_config = tty_config,
+        });
         defer debugger.deinit(gpa);
 
         try debugger.execute(.{
@@ -283,16 +289,14 @@ pub fn main() !u8 {
     const stdout: std.fs.File = .stdout();
     var stdout_writer = stdout.writer(&.{});
 
-    var vm: lemu.Vm = .{
-        .memory = .init(gpa),
+    var vm: lemu.Vm = try .init(.{
+        .gpa = gpa,
+        .readonly_memory = @ptrCast(assembler.instructions.items(.instruction)),
+        .zero_page = args.@"zero-page",
         .output = &stdout_writer.interface,
         .tty_config = .detect(stdout),
-    };
+    });
     defer vm.memory.deinit(gpa);
-    try vm.memory.readonly.appendSlice(gpa, @ptrCast(assembler.instructions.items(.instruction)));
-    if (args.@"zero-page") {
-        try vm.memory.zero_page.appendNTimes(gpa, 0, 4096);
-    }
     vm.execute() catch |e| switch (e) {
         error.ExceptionThrown => {
             var stderr: std.fs.File = .stderr();
