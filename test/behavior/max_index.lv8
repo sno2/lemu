@@ -1,0 +1,39 @@
+main:
+    SUBI X0, SP, #64
+
+    ADDI X1, XZR, #149
+    ADDI X2, XZR, #140
+    STUR X1, [X0, #32]
+    STUR X2, [X0, #0]
+
+    PRNT X1
+    PRNT X2
+
+    ADDI X1, XZR, #4
+    ADDI X2, XZR, #0
+    BL max_index
+    PRNT X0
+
+    B exit
+
+max_index:
+    LSL X3, X1, #3
+    LSL X4, X2, #3
+    ADD X3, X0, X3
+    ADD X4, X0, X4
+    LDUR X3, [X3, #0]
+    LDUR X4, [X4, #0]
+    SUBS XZR, X3, X4
+    B.LE max_index0
+    ADD X0, X1, XZR
+    BR LR
+
+max_index0:
+    ADD X0, X2, XZR
+    BR LR
+
+exit:
+
+/// X1: 0x0000000000000095 (149)
+/// X2: 0x000000000000008c (140)
+/// X0: 0x0000000000000004 (4)

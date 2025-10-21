@@ -1,0 +1,43 @@
+///# -z
+
+ADDI X0, XZR, #9
+
+ADDI X1, XZR, #1492
+SUBI X2, XZR, #1
+STUR X1, [X0, #32]
+STUR X2, [X0, #0]
+
+PRNT X1
+PRNT X2
+
+ADDI X1, XZR, #4
+ADDI X2, XZR, #0
+BL swap
+
+ADDI X0, XZR, #9
+ADDI X1, XZR, #4
+ADDI X2, XZR, #0
+LDUR X1, [X0, #32]
+LDUR X2, [X0, #0]
+
+PRNT X1
+PRNT X2
+B exit
+
+swap:
+    LSL X1, X1, #3
+    LSL X2, X2, #3
+    ADD X1, X0, X1
+    ADD X2, X0, X2
+    LDUR X3, [X1, #0]
+    LDUR X0, [X2, #0]
+    STUR X0, [X1, #0]
+    STUR X3, [X2, #0]
+    BR LR
+
+exit:
+
+/// X1: 0x00000000000005d4 (1492)
+/// X2: 0xffffffffffffffff (18446744073709551615)
+/// X1: 0xffffffffffffffff (18446744073709551615)
+/// X2: 0x00000000000005d4 (1492)
