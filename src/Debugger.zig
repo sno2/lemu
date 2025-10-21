@@ -131,7 +131,7 @@ pub fn execute(debugger: *Debugger, command: Command) Error!void {
                         }
                     }
                 },
-                .line => unreachable,
+                .line => @panic("line-based breakpoints are unimplemented"),
                 // .line => |line| {
                 //     var i: usize = 0;
                 //     var cur_line: usize = 0;
@@ -171,7 +171,7 @@ fn executeInstruction(debugger: *Debugger) Error!bool {
     return debugger.vm.executeOne() catch |e| {
         if (e == error.ExceptionThrown) {
             try debugger.printVmException(debugger.vm.exception.?);
-            return true;
+            return false;
         }
         return e;
     };
