@@ -89,6 +89,85 @@ Benchmark 2 (20 runs): ./legv8emul test/behavior/fib.lv8 -s 2000
   branch_misses      1.35M  ± 34.2K     1.25M  … 1.37M           4 (20%)        💩+ 33.0% ±  2.4%
 </code></pre></details>
 
+Here is a list of the standard and non-standard assembly instructions supported
+by Lemu:
+
+| Mneumonic | Description                                | Format                          |
+| --------- | ------------------------------------------ | ------------------------------- |
+| ADD       | ADD                                        | R-type instruction              |
+| ADDI      | ADD Immediate                              | I-type instruction              |
+| ADDIS     | ADD Immediate & Set flags                  | I-type instruction              |
+| ADDS      | ADD & Set flags                            | R-type instruction              |
+| AND       | AND                                        | R-type instruction              |
+| ANDI      | AND Immediate                              | I-type instruction              |
+| ANDIS     | AND Immediate & Set flags                  | I-type instruction              |
+| ANDS      | AND & Set flags                            | R-type instruction              |
+| B         | Branch                                     | B-type instruction              |
+| B.EQ      | Branch if Equal                            | CB-type instruction (op=0b0)    |
+| B.NE      | Branch if Not Equal                        | CB-type instruction (op=0b1)    |
+| B.LT      | Branch if Less Than                        | CB-type instruction (op=0b2)    |
+| B.LE      | Branch if Less Than or Equal               | CB-type instruction (op=0b3)    |
+| B.GT      | Branch if Greater Than                     | CB-type instruction (op=0b4)    |
+| B.GE      | Branch if Greater Than or Equal            | CB-type instruction (op=0b5)    |
+| B.LO      | Branch if Less Than (Unsigned)             | CB-type instruction (op=0b6)    |
+| B.LS      | Branch if Less Than or Equal (Unsigned)    | CB-type instruction (op=0b7)    |
+| B.HI      | Branch if Greater Than (Unsigned)          | CB-type instruction (op=0b8)    |
+| B.HS      | Branch if Greater Than or Equal (Unsigned) | CB-type instruction (op=0b9)    |
+| B.MI      | Branch if Minus                            | CB-type instruction (op=0b10)   |
+| B.PL      | Branch if Plus                             | CB-type instruction (op=0b11)   |
+| B.VS      | Branch if Overflow Set                     | CB-type instruction (op=0b12)   |
+| B.VC      | Branch if Overflow Clear                   | CB-type instruction (op=0b13)   |
+| BL        | Branch with Link                           | B-type instruction              |
+| BR        | Branch to Register                         | R-type instruction              |
+| CBNZ      | Compare & Branch if Not Zero               | CB-type instruction             |
+| CBZ       | Compare & Branch if Zero                   | CB-type instruction             |
+| EOR       | Exclusive OR                               | R-type instruction              |
+| EORI      | Exclusive OR Immediate                     | I-type instruction              |
+| LDUR      | LoaD Register Unscaled offset              | D-type instruction              |
+| LDURB     | LoaD Byte Unscaled offset                  | D-type instruction              |
+| LDURH     | LoaD Half Unscaled offset                  | D-type instruction              |
+| LDURSW    | LoaD Signed Word Unscaled offset           | D-type instruction              |
+| LDXR      | LoaD eXclusive Register                    | D-type instruction              |
+| LSL       | Logical Shift Left                         | R-type instruction              |
+| LSR       | Logical Shift Right                        | R-type instruction              |
+| MOVK      | MOVe wide with Keep                        | IW-type instruction             |
+| MOVZ      | MOVe wide with Zero                        | IW-type instruction             |
+| ORR       | Inclusive OR                               | R-type instruction              |
+| ORRI      | Inclusive OR Immediate                     | I-type instruction              |
+| STUR      | STore Register Unscaled offset             | D-type instruction              |
+| STURB     | STore Byte Unscaled offset                 | D-type instruction              |
+| STURH     | STore Half Unscaled offset                 | D-type instruction              |
+| STURW     | STore Word Unscaled offset                 | D-type instruction              |
+| STXR      | STore eXclusive Register                   | D-type instruction              |
+| SUB       | SUBtract                                   | R-type instruction              |
+| SUBI      | SUBtract Immediate                         | I-type instruction              |
+| SUBIS     | SUBtract Immediate & Set flags             | I-type instruction              |
+| SUBS      | SUBtract & Set flags                       | R-type instruction              |
+| FADDS     | Floating-point ADD Single                  | R-type instruction (shamt=0xa)  |
+| FADDD     | Floating-point ADD Double                  | R-type instruction (shamt=0xa)  |
+| FCMPS     | Floating-point CoMPare Single              | R-type instruction (shamt=0x8)  |
+| FCMPD     | Floating-point CoMPare Double              | R-type instruction (shamt=0x8)  |
+| FDIVS     | Floating-point DIVide Single               | R-type instruction (shamt=0x6)  |
+| FDIVD     | Floating-point DIVide Double               | R-type instruction (shamt=0x6)  |
+| FMULS     | Floating-point MULtiply Single             | R-type instruction (shamt=0x2)  |
+| FMULD     | Floating-point MULtiply Double             | R-type instruction (shamt=0x2)  |
+| FSUBS     | Floating-point SUBtract Single             | R-type instruction (shamt=0xe)  |
+| FSUBD     | Floating-point SUBtract Double             | R-type instruction (shamt=0xe)  |
+| LDURS     | LoaD Single floating-point                 | D-type instruction              |
+| LDURD     | LoaD Double floating-point                 | D-type instruction              |
+| MUL       | MULtiply                                   | R-type instruction (shamt=0x1f) |
+| SDIV      | Signed DIVide                              | R-type instruction (shamt=0x2)  |
+| SMULH     | Signed MULtiply High                       | R-type instruction              |
+| STURS     | STore Single floating-point                | D-type instruction              |
+| STURD     | STore Double floating-point                | D-type instruction              |
+| UDIV      | Unsigned DIVide                            | R-type instruction (shamt=0x3)  |
+| UMULH     | Unsigned MULtiply High                     | R-type instruction              |
+| HALT      | HALT execution (non-standard)              | R-type instruction              |
+| DUMP      | DUMP state (non-standard)                  | R-type instruction              |
+| PRNT      | PRiNT register (non-standard)              | R-type instruction              |
+| PRNL      | PRint NewLine (non-standard)               | R-type instruction              |
+| TIME      | TIME now (non-standard)                    | R-type instruction              |
+
 ## Testing
 
 Run `zig build test` to run all of the behavior and syntax tests (located in
