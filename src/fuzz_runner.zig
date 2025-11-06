@@ -48,9 +48,21 @@ pub fn main() !u8 {
             const tag = rand.enumValue(lemu.Instruction.Codec.Tag);
             switch (tag) {
                 // These are not implemented in legv8emul.
-                .faddd, .smulh, .umulh => continue,
+                .faddd,
+                .smulh,
+                .umulh,
+                .stxr,
+                .ldxr,
+                .sturw,
                 // These are not implemented correctly in legv8emul.
-                .udiv => continue,
+                .udiv,
+                .lsr,
+                .ldursw,
+                .ldurb,
+                // These are too hard to fuzz.
+                .time,
+                .br,
+                => continue,
                 else => {},
             }
 
@@ -91,6 +103,12 @@ pub fn main() !u8 {
 
                             try file_writer.interface.print("{s} X{d}, X{d}, #{d}", .{ codec.mneumonics[0], r1, r2, shift });
                         },
+                        .Xn => {
+                            const r1 = rand.int(u8) % 28;
+                            used_registers.set(r1);
+
+                            try file_writer.interface.print("{s} X{d}", .{ codec.mneumonics[0], r1 });
+                        },
                         else => continue,
                     }
                 },
@@ -102,6 +120,26 @@ pub fn main() !u8 {
                     const immediate = rand.int(i12);
 
                     try file_writer.interface.print("{s} X{d}, X{d}, #{d}", .{ codec.mneumonics[0], r1, r2, immediate });
+                },
+                .d => |d| switch (d.style) {
+                    .@"Xn, [Xn, #]" => {
+                        const r1 = rand.int(u8) % 28;
+                        const offset = rand.int(u4);
+                        used_registers.set(r1);
+                        try file_writer.interface.print("{s} X{d}, [XZR, #{d}]", .{ codec.mneumonics[0], r1, offset });
+                    },
+                    .@"Xn, Xn, [Xn]" => { // stxr
+                        const r1 = rand.int(u8) % 28;
+                        const r2 = rand.int(u8) % 28;
+                        const r3 = rand.int(u8) % 28;
+                        const offset = rand.int(u4);
+                        used_registers.set(r1);
+                        used_registers.set(r2);
+                        used_registers.set(r3);
+                        try file_writer.interface.print("ADDI X{d}, XZR, #{d}\n", .{ r3, offset });
+                        try file_writer.interface.print("{s} X{d}, X{d}, [X{d}]", .{ codec.mneumonics[0], r1, r2, r3 });
+                    },
+                    else => continue,
                 },
                 else => continue,
             }
@@ -140,9 +178,15 @@ pub fn main() !u8 {
 
         try file_writer.interface.flush();
 
+        var env_map: std.process.EnvMap = .init(gpa);
+        defer env_map.deinit();
+
+        try env_map.put("NO_COLOR", "1");
+
         const result = try std.process.Child.run(.{
             .allocator = gpa,
-            .argv = &.{ lemu_exe, file_path },
+            .argv = &.{ lemu_exe, "-z", file_path },
+            .env_map = &env_map,
         });
         defer {
             gpa.free(result.stderr);

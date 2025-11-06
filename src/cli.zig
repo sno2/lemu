@@ -15,6 +15,7 @@ const Args = struct {
     debug: bool = false,
     stdio: bool = false,
     @"limit-errors": bool = false,
+    assemble: bool = false,
     file: ?[]const u8 = null,
 
     pub const descriptions: []const struct { []const u8, []const u8 } = &.{
@@ -22,6 +23,7 @@ const Args = struct {
         .{ "-z, --zero-page", "Provide a non-standard memory space of 4096 bytes starting from 0x0." },
         .{ "-l, --limit-errors", "Limit to the first 3 compile errors." },
         .{ "-d, --debug", "Enable debugging." },
+        .{ "-a, --assemble", "Assemble the program into a <file>.machine file." },
         .{ "<file>", "Assemble and run the file." },
         .{ "--stdio", "Start the LSP (used by editors)." },
     };
@@ -292,34 +294,57 @@ pub fn main() !u8 {
         else => return e,
     };
 
+    var stdout_buf: [256]u8 = undefined;
     const stdout: std.fs.File = .stdout();
-    var stdout_writer = stdout.writer(&.{});
+    var stdout_writer = stdout.writer(&stdout_buf);
 
-    var vm: lemu.Vm = try .init(.{
-        .gpa = gpa,
-        .readonly_memory = @ptrCast(assembler.instructions.items(.instruction)),
-        .zero_page = args.@"zero-page",
-        .output = &stdout_writer.interface,
-        .tty_config = .detect(stdout),
-    });
-    defer vm.memory.deinit(gpa);
-    vm.execute() catch |e| switch (e) {
-        error.ExceptionThrown => {
-            var stderr: std.fs.File = .stderr();
-            var stderr_writer = stderr.writer(&outbuf);
+    if (args.assemble) {
+        try assembler.writeProgram(.{
+            .format = .{ .human = .detect(stdout) },
+            .writer = &stdout_writer.interface,
+        });
+        try stdout_writer.interface.flush();
 
-            const fmt: lemu.Vm.Exception.Fmt = .{
-                .tty_config = std.io.tty.Config.detect(stderr),
-                .assembler = &assembler,
-                .vm = &vm,
-                .source_label = args.file,
-                .exception = vm.exception.?,
-            };
-            try stderr_writer.interface.print("{f}\n", .{fmt});
-            try stderr_writer.interface.flush();
-            return 1;
-        },
-        else => return e,
-    };
+        const alloc = try std.fmt.allocPrint(gpa, "{s}.machine", .{args.file.?});
+        defer gpa.free(alloc);
+
+        const out_file = try std.fs.cwd().createFile(alloc, .{});
+        defer out_file.close();
+
+        var out_file_writer = out_file.writer(&stdout_buf);
+        try assembler.writeProgram(.{
+            .format = .binary,
+            .writer = &out_file_writer.interface,
+        });
+        try out_file_writer.interface.flush();
+    } else {
+        var vm: lemu.Vm = try .init(.{
+            .gpa = gpa,
+            .readonly_memory = @ptrCast(assembler.instructions.items(.instruction)),
+            .zero_page = args.@"zero-page",
+            .output = &stdout_writer.interface,
+            .tty_config = .detect(stdout),
+        });
+        defer vm.memory.deinit(gpa);
+        vm.execute() catch |e| switch (e) {
+            error.ExceptionThrown => {
+                var stderr: std.fs.File = .stderr();
+                var stderr_writer = stderr.writer(&outbuf);
+
+                const fmt: lemu.Vm.Exception.Fmt = .{
+                    .tty_config = std.io.tty.Config.detect(stderr),
+                    .assembler = &assembler,
+                    .vm = &vm,
+                    .source_label = args.file,
+                    .exception = vm.exception.?,
+                };
+                try stderr_writer.interface.print("{f}\n", .{fmt});
+                try stderr_writer.interface.flush();
+                return 1;
+            },
+            else => return e,
+        };
+    }
+
     return 0;
 }

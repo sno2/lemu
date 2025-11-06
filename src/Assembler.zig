@@ -580,6 +580,41 @@ fn assembleLabel(assembler: *Assembler, identifier_tok: TokenResult) Error!void 
     }
 }
 
+pub const WriteProgramOptions = struct {
+    writer: *std.io.Writer,
+    format: Format,
+
+    pub const Format = union(enum) {
+        human: std.io.tty.Config,
+        binary,
+    };
+};
+
+pub fn writeProgram(assembler: *Assembler, options: WriteProgramOptions) !void {
+    switch (options.format) {
+        .human => |tty| {
+            for (assembler.instructions.items(.instruction)) |insn| {
+                const bits_be: u32 = @bitCast(insn);
+                try tty.setColor(options.writer, .green);
+                try options.writer.print("{X} ", .{bits_be});
+                try tty.setColor(options.writer, .reset);
+                try tty.setColor(options.writer, .blue);
+                try tty.setColor(options.writer, .bold);
+                try options.writer.print("{b} ", .{bits_be});
+                try tty.setColor(options.writer, .reset);
+                try tty.setColor(options.writer, .dim);
+                try options.writer.print("{b}\n", .{@byteSwap(bits_be)});
+                try tty.setColor(options.writer, .reset);
+            }
+        },
+        .binary => {
+            for (assembler.instructions.items(.instruction)) |insn| {
+                try options.writer.writeInt(u32, @bitCast(insn), .big);
+            }
+        },
+    }
+}
+
 fn bruteForceTest(gpa: std.mem.Allocator, seed: u64) !void {
     var prng: std.Random.DefaultPrng = .init(seed);
 
@@ -591,8 +626,6 @@ fn bruteForceTest(gpa: std.mem.Allocator, seed: u64) !void {
     if (source_len != 0) {
         prng.fill(source);
     }
-
-    std.log.err("source={s}", .{source});
 
     var assembler: Assembler = .init(gpa, source);
     defer assembler.deinit(gpa);

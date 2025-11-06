@@ -420,3 +420,78 @@ test "codec tags match" {
         try std.testing.expectEqual(@as(Instruction.Codec.Tag, @enumFromInt(index)), codec.tag);
     }
 }
+
+test "oracle encoding" {
+    const oracle: []const struct { Instruction.Codec.Tag, u11 } = &.{
+        .{ .add, 0b10001011000 },
+        .{ .addi, 0b1001000100 },
+        .{ .addis, 0b1011000100 },
+        .{ .adds, 0b10101011000 },
+        .{ .@"and", 0b10001010000 },
+        .{ .andi, 0b1001001000 },
+        .{ .andis, 0b1111001000 },
+        // .{ .ands, 0b1110101000 }, // Incorrect!
+        .{ .ands, 0b11101010000 },
+        .{ .b, 0b000101 },
+        .{ .bl, 0b100101 },
+        .{ .br, 0b11010110000 },
+        .{ .cbnz, 0b10110101 },
+        .{ .cbz, 0b10110100 },
+        .{ .dump, 0b11111111110 },
+        .{ .eor, 0b11001010000 },
+        .{ .eori, 0b1101001000 },
+        .{ .faddd, 0b00011110011 },
+        .{ .fadds, 0b00011110001 },
+        .{ .fcmpd, 0b00011110011 },
+        .{ .fcmps, 0b00011110001 },
+        .{ .fdivd, 0b00011110011 },
+        .{ .fdivs, 0b00011110001 },
+        .{ .fmuld, 0b00011110011 },
+        .{ .fmuls, 0b00011110001 },
+        .{ .fsubd, 0b00011110011 },
+        .{ .fsubs, 0b00011110001 },
+        .{ .halt, 0b11111111111 },
+        .{ .ldur, 0b11111000010 },
+        .{ .ldurb, 0b00111000010 },
+        .{ .ldurd, 0b11111100010 },
+        .{ .ldurh, 0b01111000010 },
+        .{ .ldurs, 0b10111100010 },
+        .{ .ldursw, 0b10111000100 },
+        .{ .lsl, 0b11010011011 },
+        .{ .lsr, 0b11010011010 },
+        .{ .mul, 0b10011011000 },
+        .{ .orr, 0b10101010000 },
+        .{ .orri, 0b1011001000 },
+        .{ .prnl, 0b11111111100 },
+        .{ .prnt, 0b11111111101 },
+        .{ .sdiv, 0b10011010110 },
+        .{ .smulh, 0b10011011010 },
+        .{ .stur, 0b11111000000 },
+        .{ .sturb, 0b00111000000 },
+        .{ .sturd, 0b11111100000 },
+        .{ .sturh, 0b01111000000 },
+        .{ .sturs, 0b10111100000 },
+        // .{ .stursw, 0b10111000000 },
+        .{ .sub, 0b11001011000 },
+        .{ .subi, 0b1101000100 },
+        .{ .subis, 0b1111000100 },
+        .{ .subs, 0b11101011000 },
+        .{ .udiv, 0b10011010110 },
+        .{ .umulh, 0b10011011110 },
+    };
+
+    for (oracle) |val| {
+        var insn: Instruction = @bitCast(@as(u32, 0));
+        insn.setTag(val.@"0");
+        switch (val.@"0".get().format) {
+            inline else => |_, f| {
+                const opcode = @field(insn, @tagName(f)).opcode;
+                const equal = val.@"1" == opcode;
+                if (!equal) {
+                    std.log.err("{}", .{val});
+                }
+                try std.testing.expectEqual(opcode, val.@"1");
+            },
+        }
+    }
+}
