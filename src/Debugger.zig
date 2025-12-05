@@ -123,11 +123,9 @@ pub fn execute(debugger: *Debugger, command: Command) Error!void {
                         return;
                     };
                     const source_starts = debugger.assembler.instructions.items(.source_start);
-                    for (source_starts[0..], info.instruction_index..) |start, idx| {
+                    for (source_starts[0..], 0..) |start, idx| {
                         if (start == source_starts[info.instruction_index]) {
                             try debugger.breakpoints.put(debugger.gpa, idx, {});
-                        } else {
-                            break;
                         }
                     }
                 },
