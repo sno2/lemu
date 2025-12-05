@@ -5,7 +5,7 @@ const Config = struct {
     optimize: std.builtin.OptimizeMode,
     lsp: bool,
     debugger: bool,
-    strip: bool,
+    strip: ?bool,
     fuzz_seed: ?u64,
 };
 
@@ -35,31 +35,32 @@ pub fn build(b: *std.Build) !void {
         .optimize = b.standardOptimizeOption(.{}),
         .lsp = b.option(bool, "lsp", "Include LSP support (defaults to true)") orelse true,
         .debugger = b.option(bool, "debugger", "Include debugger support (defaults to true)") orelse true,
-        .strip = b.option(bool, "strip", "Strip debug information") orelse false,
+        .strip = b.option(bool, "strip", "Strip debug information"),
         .fuzz_seed = b.option(u64, "fuzz-seed", "Fuzz seed"),
     };
+    const release = b.option(bool, "release", "Build release binaries") orelse false;
 
     const config_exe = buildInner(b, config, true);
     b.installArtifact(config_exe);
 
-    const release_step = b.step("release", "Build release binaries");
+    if (release) {
+        for (release_target_queries) |release_target_query| {
+            const release_target = b.resolveTargetQuery(release_target_query);
 
-    for (release_target_queries) |release_target_query| {
-        const release_target = b.resolveTargetQuery(release_target_query);
-
-        const release_exe = buildInner(b, .{
-            .target = release_target,
-            .optimize = .ReleaseSafe,
-            .lsp = true,
-            .debugger = true,
-            .strip = true,
-            .fuzz_seed = null,
-        }, false);
-        const release_exe_name = b.fmt("lemu-{s}{s}", .{ try release_target.query.zigTriple(b.graph.arena), release_target.result.exeFileExt() });
-        const install_release_exe = b.addInstallArtifact(release_exe, .{
-            .dest_sub_path = release_exe_name,
-        });
-        release_step.dependOn(&install_release_exe.step);
+            const release_exe = buildInner(b, .{
+                .target = release_target,
+                .optimize = .ReleaseSafe,
+                .lsp = true,
+                .debugger = true,
+                .strip = true,
+                .fuzz_seed = null,
+            }, false);
+            const release_exe_name = b.fmt("lemu-{s}{s}", .{ try release_target.query.zigTriple(b.graph.arena), release_target.result.exeFileExt() });
+            const install_release_exe = b.addInstallArtifact(release_exe, .{
+                .dest_sub_path = release_exe_name,
+            });
+            b.getInstallStep().dependOn(&install_release_exe.step);
+        }
     }
 }
 
