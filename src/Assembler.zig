@@ -320,7 +320,7 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
                     };
                 },
                 .Xn => {
-                    insn.r.rd = (try assembler.expectToken(.x)).token.x;
+                    insn.r.rn = (try assembler.expectToken(.x)).token.x;
                 },
                 .prnt => {
                     insn.r.rd, insn.r.rn = switch (assembler.lex.token) {

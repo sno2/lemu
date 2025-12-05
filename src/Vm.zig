@@ -295,7 +295,7 @@ fn executeOneInner(vm: *Vm, comptime meta: Instruction.Codec, insn: Instruction)
             return;
         },
         .br => {
-            vm.pc = std.math.cast(usize, std.math.divExact(i64, vm.registers[insn.r.rd] - Memory.text_start, 4) catch {
+            vm.pc = std.math.cast(usize, std.math.divExact(i64, vm.registers[insn.r.rn] - Memory.text_start, 4) catch {
                 try vm.throwException(.pc);
             }) orelse try vm.throwException(.pc);
             return;
