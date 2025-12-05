@@ -17,5 +17,7 @@ test {
     if (build_options.lsp) {
         _ = LanguageServer;
     }
-    _ = Debugger;
+    if (build_options.debugger) {
+        _ = Debugger;
+    }
 }
