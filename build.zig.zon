@@ -2,7 +2,7 @@
     .name = .lemu,
     .version = "0.0.0",
     .fingerprint = 0xee940e35e091fe78, // Changing this has security and trust implications.
-    .minimum_zig_version = "0.15.1",
+    .minimum_zig_version = "0.15.2",
     .dependencies = .{
         .lsp_kit = .{
             .url = "git+https://github.com/zigtools/lsp-kit.git#6274eebace9a6a82ce182e24468fef88e0b95f37",
