@@ -1,5 +1,3 @@
 /.zig-cache
 /zig-out
-/release/zig-out
-/release/.zig-cache
 /legv8emul

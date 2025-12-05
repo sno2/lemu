@@ -1,8 +1,0 @@
-.{
-    .name = .release,
-    .version = "0.0.1",
-    .minimum_zig_version = "0.15.2",
-    .paths = .{""},
-    .dependencies = .{ .lemu = .{ .path = "../" } },
-    .fingerprint = 0x9e47031d1023a141,
-}
