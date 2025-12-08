@@ -360,7 +360,7 @@ pub fn @"textDocument/hover"(
             .contents = .{
                 .MarkupContent = .{
                     .kind = .markdown,
-                    .value = "An X register.\n\nFast locations for data. `X0`-`X30`. `XZR` is always `0`.",
+                    .value = "A 64-bit integral register.\n\nFast locations for data. `X0`-`X30`. `XZR` is always `0`.",
                 },
             },
             .range = range,
