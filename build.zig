@@ -7,26 +7,25 @@ const Config = struct {
     debugger: bool,
     strip: ?bool,
     fuzz_seed: ?u64,
+    name: []const u8 = "lemu",
 };
 
 const release_target_queries: []const std.Target.Query = &.{
-    .{ .cpu_arch = .x86_64, .os_tag = .windows, .abi = .gnu },
-    .{ .cpu_arch = .aarch64, .os_tag = .windows, .abi = .gnu },
-    .{ .cpu_arch = .x86, .os_tag = .windows, .abi = .gnu },
-    .{ .cpu_arch = .x86_64, .os_tag = .macos },
-    .{ .cpu_arch = .aarch64, .os_tag = .macos },
-    .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .aarch64, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .arm, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .riscv64, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .powerpc64le, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .x86, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .loongarch64, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .s390x, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .x86_64, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .s390x, .os_tag = .linux, .abi = .musl },
-    .{ .cpu_arch = .wasm32, .os_tag = .wasi },
-    .{ .cpu_arch = .wasm64, .os_tag = .wasi },
+    .{ .os_tag = .linux, .cpu_arch = .aarch64, .abi = .musl },
+    .{ .os_tag = .linux, .cpu_arch = .arm, .abi = .musl },
+    .{ .os_tag = .linux, .cpu_arch = .loongarch64, .abi = .musl },
+    .{ .os_tag = .linux, .cpu_arch = .powerpc64le, .abi = .musl },
+    .{ .os_tag = .linux, .cpu_arch = .riscv64, .abi = .musl },
+    .{ .os_tag = .linux, .cpu_arch = .s390x, .abi = .musl },
+    .{ .os_tag = .linux, .cpu_arch = .x86_64, .abi = .musl },
+    .{ .os_tag = .linux, .cpu_arch = .x86, .abi = .musl },
+    .{ .os_tag = .macos, .cpu_arch = .aarch64 },
+    .{ .os_tag = .macos, .cpu_arch = .x86_64 },
+    .{ .os_tag = .wasi, .cpu_arch = .wasm32 },
+    .{ .os_tag = .wasi, .cpu_arch = .wasm64 },
+    .{ .os_tag = .windows, .cpu_arch = .aarch64, .abi = .gnu },
+    .{ .os_tag = .windows, .cpu_arch = .x86_64, .abi = .gnu },
+    .{ .os_tag = .windows, .cpu_arch = .x86, .abi = .gnu },
 };
 
 pub fn build(b: *std.Build) !void {
@@ -38,14 +37,20 @@ pub fn build(b: *std.Build) !void {
         .strip = b.option(bool, "strip", "Strip debug information"),
         .fuzz_seed = b.option(u64, "fuzz-seed", "Fuzz seed"),
     };
-    const release = b.option(bool, "release", "Build release binaries") orelse false;
+    const maybe_release = b.option(enum { build, publish }, "release", "Release mode (publish requires 'git' and an authenticated 'tea' CLI)") orelse null;
 
     const config_exe = buildInner(b, config, true);
-    b.installArtifact(config_exe);
+    if (maybe_release == null) {
+        b.installArtifact(config_exe);
+    }
 
-    if (release) {
+    if (maybe_release) |release| {
+        var files: std.ArrayList(*std.Build.Step.Compile) = .empty;
+
         for (release_target_queries) |release_target_query| {
             const release_target = b.resolveTargetQuery(release_target_query);
+
+            const release_exe_name = b.fmt("lemu-{s}", .{try release_target.query.zigTriple(b.graph.arena)});
 
             const release_exe = buildInner(b, .{
                 .target = release_target,
@@ -54,12 +59,34 @@ pub fn build(b: *std.Build) !void {
                 .debugger = true,
                 .strip = true,
                 .fuzz_seed = null,
+                .name = release_exe_name,
             }, false);
-            const release_exe_name = b.fmt("lemu-{s}{s}", .{ try release_target.query.zigTriple(b.graph.arena), release_target.result.exeFileExt() });
-            const install_release_exe = b.addInstallArtifact(release_exe, .{
-                .dest_sub_path = release_exe_name,
-            });
-            b.getInstallStep().dependOn(&install_release_exe.step);
+            try files.append(b.graph.arena, release_exe);
+
+            const install_release_exe = b.addInstallArtifact(release_exe, .{});
+            if (release == .build) {
+                b.getInstallStep().dependOn(&install_release_exe.step);
+            }
+        }
+
+        if (release == .publish) {
+            const delete_release = b.addSystemCommand(&.{ "tea", "release", "delete", "latest", "-y" });
+
+            const delete_tag = b.addSystemCommand(&.{ "git", "push", "--delete", "origin", "latest" });
+            delete_tag.step.dependOn(&delete_release.step);
+
+            const sleep = b.addSystemCommand(&.{ "sleep", "3" }); // necessary because there seems to be a race condition
+            sleep.step.dependOn(&delete_tag.step);
+
+            const create_release = b.addSystemCommand(&.{ "tea", "release", "create", "--prerelease", "--tag", "latest", "--title", "latest", "--note", "Latest manual release.", "--repo", "sno2/lemu" });
+            create_release.step.dependOn(&sleep.step);
+
+            for (files.items) |file| {
+                create_release.addArg("--asset");
+                create_release.addArtifactArg(file);
+            }
+
+            b.getInstallStep().dependOn(&create_release.step);
         }
     }
 }
@@ -93,7 +120,7 @@ fn buildInner(b: *std.Build, config: Config, include_steps: bool) *std.Build.Ste
     });
 
     const exe = b.addExecutable(.{
-        .name = "lemu",
+        .name = config.name,
         .root_module = exe_mod,
     });
 

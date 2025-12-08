@@ -28,9 +28,13 @@ Usage:
     --stdio              Start the LSP (used by editors).
 ```
 
-## Building
+## Installation
 
-Use `zig build`. Relevant project-specific options from `zig build -h`:
+The [latest release on Codeberg](https://codeberg.org/sno2/lemu/releases/tag/latest)
+contains the most recent binaries.
+
+For building from source, use `zig build`. Relevant project-specific options
+from `zig build -h`:
 
 ```
   -Dtarget=[string]            The CPU architecture, OS, and ABI to build for
