@@ -1,16 +1,21 @@
 {
   "name": "lemu",
-  "description": "LEGv8 language support.",
+  "displayName": "Lemu - LEGv8 Assembly",
+  "icon": "lemu.png",
+  "description": "LEGv8 language server, snippets, and syntax highlighting.",
   "author": "Carter Snook",
   "license": "MIT",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sno2/lemu",
+    "url": "https://codeberg.org/sno2/lemu",
     "directory": "editors/vscode"
   },
   "publisher": "sno2",
-  "categories": [],
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
   "keywords": [
     "LEGv8",
     "Emulator",
