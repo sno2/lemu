@@ -91,10 +91,11 @@ const Args = struct {
 
 pub fn main() !u8 {
     var debug_allocator: std.heap.DebugAllocator(.{ .stack_trace_frames = 20 }) = .init;
-    const gpa, const is_debug = switch (builtin.mode) {
-        .Debug, .ReleaseSafe => .{ debug_allocator.allocator(), true },
-        .ReleaseFast, .ReleaseSmall => .{ if (builtin.target.os.tag == .wasi) std.heap.wasm_allocator else std.heap.smp_allocator, false },
-    };
+    const gpa, const is_debug =
+        if (builtin.target.os.tag == .wasi) .{ std.heap.wasm_allocator, false } else switch (builtin.mode) {
+            .Debug, .ReleaseSafe => .{ debug_allocator.allocator(), true },
+            .ReleaseFast, .ReleaseSmall => .{ std.heap.smp_allocator, false },
+        };
     defer if (is_debug) {
         _ = debug_allocator.deinit();
     };
