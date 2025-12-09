@@ -5,7 +5,7 @@
   "description": "LEGv8 language server, snippets, and syntax highlighting.",
   "author": "Carter Snook",
   "license": "MIT",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repository": {
     "type": "git",
     "url": "https://codeberg.org/sno2/lemu",
@@ -24,6 +24,7 @@
   "engines": {
     "vscode": "^1.100.0"
   },
+  "browser": "./out/extension",
   "main": "./out/extension",
   "contributes": {
     "configuration": {
@@ -31,7 +32,7 @@
       "properties": {
         "lemu.exePath": {
           "type": "string",
-          "description": "Path to the lemu executable. Defaults to 'lemu' in PATH."
+          "description": "Path to the lemu executable. Fetches a remote binary if unset."
         }
       }
     },
@@ -75,6 +76,9 @@
     "watch": "tsc -b -w",
     "lint": "eslint"
   },
+  "extensionDependencies": [
+    "ms-vscode.wasm-wasi-core"
+  ],
   "devDependencies": {
     "@eslint/js": "^9.13.0",
     "@stylistic/eslint-plugin": "^2.9.0",
@@ -87,6 +91,8 @@
     "typescript-eslint": "^8.39.0"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "@vscode/wasm-wasi": "^1.0.1",
+    "@vscode/wasm-wasi-lsp": "^0.1.0-pre.7",
+    "vscode-languageclient": "^10.0.0-next.12"
   }
 }
