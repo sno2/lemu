@@ -5,7 +5,7 @@
   "description": "LEGv8 language server, snippets, and syntax highlighting.",
   "author": "Carter Snook",
   "license": "MIT",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "repository": {
     "type": "git",
     "url": "https://codeberg.org/sno2/lemu",
@@ -27,6 +27,32 @@
   "browser": "./out/extension",
   "main": "./out/extension",
   "contributes": {
+    "commands": [
+      {
+        "command": "lemu.run",
+        "title": "Run Lemu emulator",
+        "icon": "$(play)"
+      },
+      {
+        "command": "lemu.debug",
+        "title": "Run Lemu debugger",
+        "icon": "$(debug)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "lemu.run",
+          "when": "resourceLangId == LEGv8",
+          "group": "navigation"
+        },
+        {
+          "command": "lemu.debug",
+          "when": "resourceLangId == LEGv8",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "lemu",
       "properties": {

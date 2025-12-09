@@ -9,6 +9,7 @@ import {
   UIKind,
   OutputChannel,
   ProgressLocation,
+  commands,
 } from "vscode";
 import {
   LanguageClient,
@@ -55,7 +56,9 @@ async function fetchBinary(
     const url = `${remote}${binaryName}`;
     const response = await fetch(url);
 
-    const lastModified = new Date(response.headers.get("Last-Modified") ?? 1);
+    const lastModified = new Date(
+      response.headers.get("Last-Modified") ?? Date.now()
+    );
     if (installLastModified.getTime() === lastModified.getTime()) {
       channel.appendLine(
         '(JS) Using existing binary that matches "Last-Modified" of latest'
@@ -68,8 +71,8 @@ async function fetchBinary(
         binary
           ? "Lemu executable is out of date. Would you like to update it?"
           : "Lemu executable not found. Would you like to download it?",
-        "Yes (Always)",
         "Yes",
+        "Yes (Always)",
         "Cancel"
       );
 
@@ -80,7 +83,7 @@ async function fetchBinary(
       }
     }
 
-    return await window.withProgress(
+    const bytes = await window.withProgress(
       {
         location: ProgressLocation.Notification,
         title: `Downloading ${binaryName}`,
@@ -101,6 +104,9 @@ async function fetchBinary(
         return bytes;
       }
     );
+    channel.appendLine("(JS) Downloaded and saved binary");
+    window.showInformationMessage(`Successfully downloaded ${binaryName}`);
+    return bytes;
   } catch (err) {
     channel.appendLine(`(JS) Failed to fetch binary: ${err}`);
     if (binary) {
@@ -218,6 +224,28 @@ export async function activate(context: ExtensionContext) {
 
       client = await getLanguageClient(channel, binaryUri, binary);
     }
+
+    commands.registerCommand("lemu.run", () => {
+      const editor = window.activeTextEditor;
+      if (!editor) return;
+
+      const term = window.createTerminal({ name: "lemu" });
+      term.show(true);
+
+      const file = editor.document.uri.fsPath;
+      term.sendText(`${exePath || "lemu"} --zero-page ${file}`);
+    });
+
+    commands.registerCommand("lemu.debug", () => {
+      const editor = window.activeTextEditor;
+      if (!editor) return;
+
+      const term = window.createTerminal({ name: "lemu" });
+      term.show(true);
+
+      const file = editor.document.uri.fsPath;
+      term.sendText(`${exePath || "lemu"} --zero-page --debug ${file}`);
+    });
   } catch (e) {
     window.showErrorMessage(`Failed to get Lemu executable: ${e}`);
     return;
