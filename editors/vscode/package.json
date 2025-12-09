@@ -5,7 +5,7 @@
   "description": "LEGv8 language server, snippets, and syntax highlighting.",
   "author": "Carter Snook",
   "license": "MIT",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "repository": {
     "type": "git",
     "url": "https://codeberg.org/sno2/lemu",
@@ -77,6 +77,7 @@
         "extensions": [
           ".lv8",
           ".legv8",
+          ".legv8asm",
           ".S"
         ],
         "configuration": "./language-configuration.json"

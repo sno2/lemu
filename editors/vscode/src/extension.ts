@@ -93,7 +93,7 @@ async function fetchBinary(
         const bytes = await response.bytes();
         channel.appendLine(`(JS) Writing binary: "${binaryUri.toString()}"`);
         await workspace.fs.writeFile(binaryUri, bytes as any);
-        if (!binaryName.endsWith(".wasm") || !binaryName.endsWith(".exe")) {
+        if (!binaryName.endsWith(".wasm") && !binaryName.endsWith(".exe")) {
           channel.appendLine("(JS) Making binary executable.");
           await chmod(binaryUri.fsPath, 0o755);
         }
@@ -200,6 +200,7 @@ export async function activate(context: ExtensionContext) {
   const isBrowser = env.uiKind == UIKind.Web;
 
   const channel = window.createOutputChannel("Lemu Language Server");
+  channel.appendLine("(JS) Extension is activating");
 
   try {
     if (exePath) {
