@@ -89,6 +89,7 @@ fn accessDynamicMemory(mem: *Memory, index: u64) Error![]u8 {
     const gop = try mem.dynamic.getOrPut(mem.gpa, index / mem.page_len);
     if (!gop.found_existing) {
         gop.value_ptr.* = try mem.gpa.alloc(u8, mem.page_len);
+        @memset(gop.value_ptr.*, 0);
     }
     return gop.value_ptr.*[@intCast(index % mem.page_len)..]; // @intCast required for wasi
 }
