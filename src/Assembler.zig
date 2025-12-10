@@ -21,7 +21,6 @@ needs_relocations: bool,
 pub const AnnotatedInstruction = struct {
     source_start: u32,
     instruction: Instruction,
-    instruction_codec_tag: Instruction.Codec.Tag,
     branch_label_index: ?u32,
 };
 
@@ -188,7 +187,6 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
             var instruction: AnnotatedInstruction = .{
                 .source_start = @intCast(identifier_tok.source_range.start),
                 .instruction = @bitCast(@as(u32, 0)),
-                .instruction_codec_tag = .add,
                 .branch_label_index = null,
             };
             instruction.instruction.setTag(.add);
@@ -210,7 +208,6 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
             var instruction: AnnotatedInstruction = .{
                 .source_start = @intCast(identifier_tok.source_range.start),
                 .instruction = @bitCast(@as(u32, 0)),
-                .instruction_codec_tag = .movz,
                 .branch_label_index = null,
             };
             instruction.instruction.setTag(.movz);
@@ -242,7 +239,6 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
             var instruction: AnnotatedInstruction = .{
                 .source_start = @intCast(identifier_tok.source_range.start),
                 .instruction = @bitCast(@as(u32, 0)),
-                .instruction_codec_tag = .subs,
                 .branch_label_index = null,
             };
             instruction.instruction.setTag(.subs);
@@ -258,7 +254,6 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
             var instruction: AnnotatedInstruction = .{
                 .source_start = @intCast(identifier_tok.source_range.start),
                 .instruction = @bitCast(@as(u32, 0)),
-                .instruction_codec_tag = .subis,
                 .branch_label_index = null,
             };
             instruction.instruction.setTag(.subis);
@@ -288,7 +283,6 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
     var instruction: AnnotatedInstruction = .{
         .source_start = @intCast(identifier_tok.source_range.start),
         .instruction = @bitCast(@as(u32, 0)),
-        .instruction_codec_tag = codec_tag,
         .branch_label_index = null,
     };
     var insn: *Instruction = &instruction.instruction;

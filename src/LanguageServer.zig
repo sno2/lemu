@@ -262,9 +262,9 @@ pub fn @"textDocument/hover"(
                 }
             }
 
-            if (result) |index| {
+            if (result) |index| blk: {
                 defer ls.scratch.clearRetainingCapacity();
-                const codec = insns_slice.items(.instruction_codec_tag)[index].get();
+                const codec = (insns_slice.items(.instruction)[index].getTag() orelse break :blk).get();
 
                 try ls.scratch.writer.print(
                     \\{s}: {f}
