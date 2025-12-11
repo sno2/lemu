@@ -162,12 +162,15 @@ pub fn main() !u8 {
         });
         defer debugger.deinit(gpa);
 
-        try debugger.execute(.{
+        debugger.execute(.{
             .@"set-file" = .{
                 .label = args.file.?,
                 .source = source.items[0 .. source.items.len - 1 :0],
             },
-        });
+        }) catch |e| switch (e) {
+            error.InvalidSyntax => return 1,
+            else => return e,
+        };
 
         var prefix_buf: [48]u8 = undefined;
         var prefix_writer = std.io.Writer.fixed(&prefix_buf);
