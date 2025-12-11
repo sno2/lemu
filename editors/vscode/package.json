@@ -5,7 +5,7 @@
   "description": "LEGv8 language server, snippets, and syntax highlighting.",
   "author": "Carter Snook",
   "license": "MIT",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "repository": {
     "type": "git",
     "url": "https://codeberg.org/sno2/lemu",
@@ -101,7 +101,9 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",
     "watch": "tsc -b -w",
-    "lint": "eslint"
+    "lint": "eslint",
+    "package": "vsce package --baseContentUrl https://codeberg.org/sno2/lemu/raw/branch/main/editors/vscode",
+    "publish": "vsce publish --baseContentUrl https://codeberg.org/sno2/lemu/raw/branch/main/editors/vscode"
   },
   "extensionDependencies": [
     "ms-vscode.wasm-wasi-core"
