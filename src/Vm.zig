@@ -155,10 +155,10 @@ pub const Exception = union(enum(u6)) {
 
             var result: ?usize = null;
             var low: usize = 0;
-            var high: usize = fmt.assembler.labels.count();
+            var high: usize = fmt.assembler.symbols.count();
             while (low < high) {
                 const mid = low + (high - low) / 2;
-                if (fmt.assembler.labels.values()[mid].instruction_index <= insn_index) {
+                if (fmt.assembler.symbols.values()[mid].instruction_index <= insn_index) {
                     result = mid;
                     low = mid + 1;
                 } else {
@@ -174,7 +174,7 @@ pub const Exception = union(enum(u6)) {
                 line,
                 1 + insn_start - line_start,
                 if (result != null) " in " else "",
-                if (result) |i| fmt.assembler.labels.keys()[i] else "",
+                if (result) |i| fmt.assembler.symbols.keys()[i] else "",
                 (Memory.text_start + fmt.vm.pc * 4),
             });
             try fmt.tty_config.setColor(writer, .reset);

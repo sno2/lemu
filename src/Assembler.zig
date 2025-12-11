@@ -13,15 +13,13 @@ const Assembler = @This();
 gpa: std.mem.Allocator,
 lex: Lexer,
 instructions: std.MultiArrayList(AnnotatedInstruction),
-labels: std.StringArrayHashMapUnmanaged(Label),
-undefined_labels: std.StringArrayHashMapUnmanaged(std.ArrayList(UndefinedLabel)),
-errors: std.ArrayListUnmanaged(Compilation.Error),
-needs_relocations: bool,
+symbols: std.StringArrayHashMapUnmanaged(Symbol),
+relocations: std.ArrayList(Relocation),
+errors: std.ArrayList(Compilation.Error),
 
 pub const AnnotatedInstruction = struct {
     source_start: u32,
     instruction: Instruction,
-    branch_label_index: ?u32,
 };
 
 pub const Error = error{InvalidSyntax} || std.mem.Allocator.Error;
@@ -35,17 +33,20 @@ pub fn fail(assembler: *Assembler, err: Compilation.Error) Error!noreturn {
     return error.InvalidSyntax;
 }
 
-const Label = struct {
+const Symbol = struct {
     instruction_index: u32,
 };
 
-const UndefinedLabel = struct {
+pub const Relocation = struct {
     instruction_index: u32,
     format: Format,
+    symbol: Lexer.SourceRange,
+    resolved: bool = false,
 
     pub const Format = enum {
         b,
         cb,
+        /// 2 instructions are reserved
         lda,
     };
 };
@@ -55,10 +56,9 @@ pub fn init(gpa: std.mem.Allocator, source: [:0]const u8) Assembler {
         .gpa = gpa,
         .lex = .{ .source = source },
         .instructions = .empty,
-        .labels = .empty,
-        .undefined_labels = .empty,
+        .symbols = .empty,
+        .relocations = .empty,
         .errors = .empty,
-        .needs_relocations = false,
     };
     assembler.lex.next();
     return assembler;
@@ -67,23 +67,16 @@ pub fn init(gpa: std.mem.Allocator, source: [:0]const u8) Assembler {
 pub fn reset(assembler: *Assembler, source: [:0]const u8) void {
     assembler.lex = .{ .source = source };
     assembler.instructions.clearRetainingCapacity();
-    assembler.labels.clearRetainingCapacity();
-    for (assembler.undefined_labels.values()) |*undefined_label| {
-        undefined_label.deinit(assembler.gpa);
-    }
-    assembler.undefined_labels.clearRetainingCapacity();
+    assembler.symbols.clearRetainingCapacity();
+    assembler.relocations.clearRetainingCapacity();
     assembler.errors.clearRetainingCapacity();
-    assembler.needs_relocations = false;
     assembler.lex.next();
 }
 
 pub fn deinit(assembler: *Assembler, gpa: std.mem.Allocator) void {
     assembler.instructions.deinit(gpa);
-    assembler.labels.deinit(gpa);
-    for (assembler.undefined_labels.values()) |*undefined_label| {
-        undefined_label.deinit(assembler.gpa);
-    }
-    assembler.undefined_labels.deinit(gpa);
+    assembler.symbols.deinit(gpa);
+    assembler.relocations.deinit(gpa);
     assembler.errors.deinit(gpa);
 }
 
@@ -146,27 +139,16 @@ pub fn assemble(assembler: *Assembler) Error!void {
         }
     }
 
-    for (assembler.undefined_labels.values()) |undefined_labels| {
-        for (undefined_labels.items) |label| {
-            const source_start = assembler.instructions.items(.source_start)[label.instruction_index];
-            assembler.lex.index = source_start;
-            assembler.lex.next();
-            assembler.lex.next();
-            var source_range: Lexer.SourceRange = assembler.lex.sourceRange();
-            while (assembler.lex.token != .newline and assembler.lex.token != .eof) {
-                source_range = assembler.lex.sourceRange();
-                assembler.lex.next();
-            }
-
+    for (assembler.relocations.items) |*relocation| {
+        if (relocation.resolved) continue;
+        const instructions = assembler.instructions.items(.instruction)[relocation.instruction_index..];
+        relocation.resolved = try assembler.resolveRelocation(relocation.*, instructions);
+        if (!relocation.resolved) {
             try assembler.addError(.{
-                .data = .{ .undefined_label = source_range.slice(assembler.lex.source) },
-                .source_range = source_range,
+                .data = .{ .undefined_label = relocation.symbol.slice(assembler.lex.source) },
+                .source_range = relocation.symbol,
             });
         }
-    }
-
-    if (assembler.needs_relocations) {
-        @panic("Congratulations! You have enough instructions to require relocations. However, this is not implemented yet...");
     }
 
     if (assembler.errors.items.len != 0) {
@@ -179,18 +161,20 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
     assembler.lex.next();
     const identifier = identifier_tok.source_range.slice(assembler.lex.source);
 
+    if (assembler.lex.token == .@":") {
+        try assembler.assembleLabel(identifier_tok);
+        return;
+    }
+
+    try assembler.instructions.ensureUnusedCapacity(assembler.gpa, 3);
+
     const codec_tag = Instruction.Codec.Tag.map.get(identifier) orelse {
-        if (assembler.lex.token == .@":") {
-            try assembler.assembleLabel(identifier_tok);
-            return;
-        } else if (std.mem.eql(u8, identifier, "MOV")) {
+        if (std.mem.eql(u8, identifier, "MOV")) {
             var instruction: AnnotatedInstruction = .{
                 .source_start = @intCast(identifier_tok.source_range.start),
                 .instruction = @bitCast(@as(u32, 0)),
-                .branch_label_index = null,
             };
             instruction.instruction.setTag(.add);
-            try assembler.instructions.ensureUnusedCapacity(assembler.gpa, 1);
             defer assembler.instructions.appendAssumeCapacity(instruction);
 
             instruction.instruction.r.rd = (try assembler.expectToken(.x)).token.x;
@@ -199,50 +183,36 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
             instruction.instruction.r.rm = 31;
             return;
         } else if (std.mem.eql(u8, identifier, "LDA")) {
-            const result = (try assembler.expectToken(.x)).token.x;
+            const source_start: u32 = @intCast(identifier_tok.source_range.start);
+            var instructions: [2]Instruction = @splat(@bitCast(@as(u32, 0)));
+            defer for (&instructions, 0..) |*i, j| {
+                i.setTag(if (j == 0) .movz else .movk);
+                assembler.instructions.appendAssumeCapacity(.{
+                    .source_start = source_start,
+                    .instruction = i.*,
+                });
+            };
+
+            const rd = (try assembler.expectToken(.x)).token.x;
             _ = try assembler.expectToken(.@",");
             const label_tok = try assembler.expectToken(.identifier);
-            const label_name = label_tok.source_range.slice(assembler.lex.source);
-            const maybe_label = assembler.labels.get(label_name);
 
-            var instruction: AnnotatedInstruction = .{
-                .source_start = @intCast(identifier_tok.source_range.start),
-                .instruction = @bitCast(@as(u32, 0)),
-                .branch_label_index = null,
-            };
-            instruction.instruction.setTag(.movz);
-            if (maybe_label == null) {
-                const gop = try assembler.undefined_labels.getOrPut(assembler.gpa, label_name);
-                if (!gop.found_existing) {
-                    gop.value_ptr.* = .empty;
-                }
-                try gop.value_ptr.append(assembler.gpa, .{
-                    .format = .lda,
-                    .instruction_index = @intCast(assembler.instructions.len),
-                });
+            for (&instructions) |*i| {
+                i.iw.rd = rd;
             }
 
-            var addr: u64 = if (maybe_label) |label| Memory.text_start + 4 * label.instruction_index else std.math.maxInt(u64);
-            for (0..4) |half| {
-                instruction.instruction.iw.mov_immediate = @truncate(addr);
-                addr >>= 16;
-                instruction.instruction.iw.shamtx16 = @intCast(half);
-                instruction.instruction.iw.rd = result;
-                if (half == 0 or instruction.instruction.iw.mov_immediate != 0) {
-                    try assembler.instructions.append(assembler.gpa, instruction);
-                }
-                instruction.instruction.setTag(.movk);
-            }
-
+            try assembler.addRelocation(.{
+                .instruction_index = @intCast(assembler.instructions.len),
+                .format = .lda,
+                .symbol = label_tok.source_range,
+            }, &instructions);
             return;
         } else if (std.mem.eql(u8, identifier, "CMP")) {
             var instruction: AnnotatedInstruction = .{
                 .source_start = @intCast(identifier_tok.source_range.start),
                 .instruction = @bitCast(@as(u32, 0)),
-                .branch_label_index = null,
             };
             instruction.instruction.setTag(.subs);
-            try assembler.instructions.ensureUnusedCapacity(assembler.gpa, 1);
             defer assembler.instructions.appendAssumeCapacity(instruction);
 
             instruction.instruction.r.rd = 31;
@@ -254,10 +224,8 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
             var instruction: AnnotatedInstruction = .{
                 .source_start = @intCast(identifier_tok.source_range.start),
                 .instruction = @bitCast(@as(u32, 0)),
-                .branch_label_index = null,
             };
             instruction.instruction.setTag(.subis);
-            try assembler.instructions.ensureUnusedCapacity(assembler.gpa, 1);
             defer assembler.instructions.appendAssumeCapacity(instruction);
 
             instruction.instruction.i.rd = 31;
@@ -283,11 +251,9 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
     var instruction: AnnotatedInstruction = .{
         .source_start = @intCast(identifier_tok.source_range.start),
         .instruction = @bitCast(@as(u32, 0)),
-        .branch_label_index = null,
     };
     var insn: *Instruction = &instruction.instruction;
     insn.setTag(codec.tag);
-    try assembler.instructions.ensureUnusedCapacity(assembler.gpa, 1);
     defer assembler.instructions.appendAssumeCapacity(instruction);
 
     switch (codec.format) {
@@ -435,48 +401,28 @@ fn assembleLineAtIdentifier(assembler: *Assembler) Error!void {
                 },
             }
         },
-        inline .b, .cb => {
-            const format: UndefinedLabel.Format = switch (codec.format) {
-                .b => .b,
-                .cb => .cb,
-                else => unreachable,
-            };
-
-            if (format == .cb) {
-                if (codec.format.cb.op) |op| {
-                    insn.cb.rt = op;
-                } else {
-                    insn.cb.rt = (try assembler.expectToken(.x)).token.x;
-                    _ = try assembler.expectToken(.@",");
-                }
+        .b => {
+            const name_tok = try assembler.expectToken(.identifier);
+            try assembler.addRelocation(.{
+                .format = .b,
+                .instruction_index = @intCast(assembler.instructions.len),
+                .symbol = name_tok.source_range,
+            }, insn[0..1]);
+        },
+        .cb => {
+            if (codec.format.cb.op) |op| {
+                insn.cb.rt = op;
+            } else {
+                insn.cb.rt = (try assembler.expectToken(.x)).token.x;
+                _ = try assembler.expectToken(.@",");
             }
 
             const name_tok = try assembler.expectToken(.identifier);
-            const name = name_tok.source_range.slice(assembler.lex.source);
-            if (assembler.labels.getIndex(name)) |label| blk2: {
-                instruction.branch_label_index = @intCast(label);
-                const offset = @as(isize, @intCast(assembler.labels.values()[label].instruction_index)) - @as(isize, @intCast(assembler.instructions.len));
-                switch (format) {
-                    .b => insn.b.br_address = std.math.cast(i26, offset) orelse {
-                        assembler.needs_relocations = true;
-                        break :blk2;
-                    },
-                    .cb => insn.cb.cond_br_address = std.math.cast(i19, offset) orelse {
-                        assembler.needs_relocations = true;
-                        break :blk2;
-                    },
-                    else => unreachable,
-                }
-            } else {
-                const gop = try assembler.undefined_labels.getOrPut(assembler.gpa, name);
-                if (!gop.found_existing) {
-                    gop.value_ptr.* = .empty;
-                }
-                try gop.value_ptr.append(assembler.gpa, .{
-                    .instruction_index = @intCast(assembler.instructions.len),
-                    .format = format,
-                });
-            }
+            try assembler.addRelocation(.{
+                .format = .cb,
+                .instruction_index = @intCast(assembler.instructions.len),
+                .symbol = name_tok.source_range,
+            }, insn[0..1]);
         },
         .iw => inner2: {
             insn.iw.rd = (try assembler.expectToken(.x)).token.x;
@@ -531,47 +477,45 @@ fn assembleLabel(assembler: *Assembler, identifier_tok: TokenResult) Error!void 
     }
     assembler.lex.next();
 
-    const gop = try assembler.labels.getOrPut(assembler.gpa, identifier);
+    const gop = try assembler.symbols.getOrPut(assembler.gpa, identifier);
     if (gop.found_existing) {
-        try assembler.fail(.{
+        try assembler.addError(.{
             .data = .{ .duplicate_label_name = identifier },
             .source_range = identifier_tok.source_range,
         });
+    } else {
+        gop.value_ptr.* = .{ .instruction_index = @intCast(assembler.instructions.len) };
     }
-    gop.value_ptr.* = .{ .instruction_index = @intCast(assembler.instructions.len) };
+}
 
-    if (assembler.undefined_labels.fetchSwapRemove(identifier)) |kv| {
-        var list = kv.value;
-        defer list.deinit(assembler.gpa);
-
-        for (list.items) |undefined_label| {
-            const full_offset = assembler.instructions.len - undefined_label.instruction_index;
-            assembler.instructions.items(.branch_label_index)[undefined_label.instruction_index] = @intCast(gop.index);
-            switch (undefined_label.format) {
-                .b => {
-                    const offset = std.math.cast(i26, full_offset) orelse {
-                        assembler.needs_relocations = true;
-                        continue;
-                    };
-                    assembler.instructions.items(.instruction)[undefined_label.instruction_index].b.br_address = offset;
-                },
-                .cb => {
-                    const offset = std.math.cast(i19, full_offset) orelse {
-                        assembler.needs_relocations = true;
-                        continue;
-                    };
-                    assembler.instructions.items(.instruction)[undefined_label.instruction_index].cb.cond_br_address = offset;
-                },
-                .lda => {
-                    var addr: u64 = Memory.text_start + 4 * assembler.instructions.len;
-                    for (assembler.instructions.items(.instruction)[undefined_label.instruction_index..][0..4]) |*instruction| {
-                        instruction.iw.mov_immediate = @truncate(addr);
-                        addr >>= 16;
-                    }
-                },
+fn resolveRelocation(assembler: *Assembler, relocation: Relocation, instructions: []Instruction) Error!bool {
+    const symbol = assembler.symbols.get(relocation.symbol.slice(assembler.lex.source)) orelse return false;
+    switch (relocation.format) {
+        inline .b, .cb => |format| {
+            const instruction = &instructions[0];
+            const full_offset = std.math.sub(isize, @intCast(symbol.instruction_index), @intCast(relocation.instruction_index)) catch return false;
+            switch (format) {
+                .b => instruction.b.br_address = std.math.cast(@TypeOf(instruction.b.br_address), full_offset) orelse return false,
+                .cb => instruction.cb.cond_br_address = std.math.cast(@TypeOf(instruction.cb.cond_br_address), full_offset) orelse return false,
+                else => comptime unreachable,
             }
-        }
+            return true;
+        },
+        .lda => {
+            const absolute_address = Memory.text_start + @sizeOf(Instruction) * symbol.instruction_index;
+            for (instructions[0..2], 0..) |*instruction, i| {
+                instruction.iw.mov_immediate = @truncate(absolute_address >> @intCast(16 * i));
+                instruction.iw.shamtx16 = @intCast(i);
+            }
+            return true;
+        },
     }
+}
+
+fn addRelocation(assembler: *Assembler, relocation: Relocation, instructions: []Instruction) Error!void {
+    var reloc = relocation;
+    reloc.resolved = try assembler.resolveRelocation(relocation, instructions);
+    try assembler.relocations.append(assembler.gpa, reloc);
 }
 
 pub const WriteProgramOptions = struct {

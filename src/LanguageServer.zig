@@ -314,7 +314,7 @@ pub fn @"textDocument/hover"(
                 };
             }
 
-            if (assembler.labels.contains(assembler.lex.source[assembler.lex.start..assembler.lex.index])) {
+            if (assembler.symbols.contains(assembler.lex.source[assembler.lex.start..assembler.lex.index])) {
                 defer ls.scratch.clearRetainingCapacity();
                 try ls.scratch.writer.print(
                     \\```
@@ -413,7 +413,7 @@ pub fn @"textDocument/definition"(
         return null;
     }
 
-    if (assembler.labels.getKey(assembler.lex.source[assembler.lex.start..assembler.lex.index])) |label| {
+    if (assembler.symbols.getKey(assembler.lex.source[assembler.lex.start..assembler.lex.index])) |label| {
         return .{
             .Definition = .{
                 .Location = .{

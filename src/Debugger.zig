@@ -117,7 +117,7 @@ pub fn execute(debugger: *Debugger, command: Command) Error!void {
         .@"break" => |brk| {
             switch (brk) {
                 .label => |label| {
-                    const info = debugger.assembler.labels.get(label) orelse {
+                    const info = debugger.assembler.symbols.get(label) orelse {
                         try debugger.vm.output.print("error: no label found for '{s}'\n", .{label});
                         try debugger.vm.output.flush();
                         return;
