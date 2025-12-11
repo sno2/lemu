@@ -101,9 +101,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",
     "watch": "tsc -b -w",
-    "lint": "eslint",
-    "package": "vsce package --baseContentUrl https://codeberg.org/sno2/lemu/raw/branch/main/editors/vscode",
-    "publish": "vsce publish --baseContentUrl https://codeberg.org/sno2/lemu/raw/branch/main/editors/vscode"
+    "lint": "eslint"
   },
   "extensionDependencies": [
     "ms-vscode.wasm-wasi-core"

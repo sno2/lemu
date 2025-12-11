@@ -238,6 +238,24 @@ fn buildInner(b: *std.Build, config: Config, include_steps: bool) *std.Build.Ste
         const update_snippet_src = b.addUpdateSourceFiles();
         update_snippet_src.addCopyFileToSource(code_snippets_json, "editors/vscode/legv8.code-snippets");
         code_snippets_step.dependOn(&update_snippet_src.step);
+
+        const package_step = b.step("package", "Package extensions; requires 'vsce'");
+
+        const base_content_url = "https://codeberg.org/sno2/lemu/raw/branch/main/editors/vscode";
+
+        const run_vsce_package = b.addSystemCommand(&.{ "vsce", "package", "--baseContentUrl", base_content_url });
+        run_vsce_package.setCwd(b.path("editors/vscode"));
+        package_step.dependOn(&run_vsce_package.step);
+
+        const publish_step = b.step("publish", "Publish extensions; requires 'vsce' and 'ovsx'");
+
+        const run_vsce_publish = b.addSystemCommand(&.{ "vsce", "publish", "--baseContentUrl", base_content_url });
+        run_vsce_publish.setCwd(b.path("editors/vscode"));
+        publish_step.dependOn(&run_vsce_publish.step);
+
+        const run_ovsx_publish = b.addSystemCommand(&(.{ "ovsx", "publish", "--baseContentUrl", base_content_url }));
+        run_ovsx_publish.setCwd(b.path("editors/vscode"));
+        publish_step.dependOn(&run_ovsx_publish.step);
     }
 
     return exe;
