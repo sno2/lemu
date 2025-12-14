@@ -31,7 +31,9 @@ Usage:
 ## Installation
 
 The [latest release on Codeberg](https://codeberg.org/sno2/lemu/releases/tag/latest)
-contains the most recent binaries.
+contains the most recent binaries. The VS Code extension is available on the
+[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sno2.lemu)
+and the [Open VSX Registry](https://open-vsx.org/extension/sno2/lemu).
 
 For building from source, use `zig build`. Relevant project-specific options
 from `zig build -h`:
